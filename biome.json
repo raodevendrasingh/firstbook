@@ -12,19 +12,74 @@
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",
-		"indentWidth": 4
+		"indentWidth": 4,
+		"lineWidth": 80,
+		"formatWithErrors": true
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always"
+		}
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"correctness": {
+				"noUnusedImports": "warn",
+				"noUnusedVariables": "warn",
+				"noEmptyPattern": "off",
+				"noUnusedFunctionParameters": "off",
+				"useUniqueElementIds": "off",
+				"noSolidDestructuredProps": "off"
+			},
 			"suspicious": {
+				"noExplicitAny": "error",
+				"noConsole": "warn",
+				"noDocumentCookie": "off",
 				"noUnknownAtRules": "off"
+			},
+			"performance": {
+				"noDelete": "error",
+				"noImgElement": "off",
+				"noNamespaceImport": "off"
+			},
+			"style": {
+				"noMagicNumbers": "off",
+				"noNonNullAssertion": "off",
+				"useConsistentArrayType": "error",
+				"noParameterAssign": "error",
+				"useAsConstAssertion": "error",
+				"useDefaultParameterLast": "error",
+				"useEnumInitializers": "error",
+				"useSelfClosingElements": "error",
+				"useSingleVarDeclarator": "error",
+				"noUnusedTemplateLiteral": "error",
+				"useNumberNamespace": "error",
+				"noInferrableTypes": "error",
+				"noUselessElse": "error",
+				"useFilenamingConvention": "off"
+			},
+			"complexity": {
+				"useLiteralKeys": "error",
+				"noUselessCatch": "off",
+				"noExcessiveLinesPerFunction": "off"
+			},
+			"nursery": {
+				"useConsistentTypeDefinitions": "off",
+				"useMaxParams": "off"
 			}
+		}
+	},
+	"json": {
+		"parser": {
+			"allowComments": true
 		},
-		"domains": {
-			"next": "recommended",
-			"react": "recommended"
+		"formatter": {
+			"enabled": true,
+			"indentStyle": "tab",
+			"indentWidth": 4,
+			"lineWidth": 100
 		}
 	},
 	"assist": {

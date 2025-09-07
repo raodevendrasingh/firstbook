@@ -8,8 +8,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-	title: "Exa LM",
-	description: "Exa LM",
+	title: "FirstbookLM",
+	description: "NotebookLM alternative powered by Exa API",
 };
 
 export default function RootLayout({
@@ -19,9 +19,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body
-				className={`${outfit.variable} antialiased`}
-			>
+			<body className={`${outfit.variable} font-sans antialiased`}>
 				{children}
 			</body>
 		</html>
