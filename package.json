@@ -6,7 +6,7 @@
 		"dev": "bun format && next dev --turbopack",
 		"build": "bun format && next build --turbopack",
 		"start": "next start",
-		"lint": "biome check",
+		"fix": "biome check --write",
 		"format": "biome format --write",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",

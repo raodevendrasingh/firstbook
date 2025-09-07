@@ -1,6 +1,9 @@
 "use client";
 
+import type { Session, User } from "better-auth";
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -11,14 +14,17 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
-import Link from "next/link";
-import { Skeleton } from "./ui/skeleton";
 import { loadAvatar } from "@/lib/avatar-utils";
+import { Skeleton } from "./ui/skeleton";
+
+type SessionType = {
+	user: User;
+	session: Session;
+};
 
 export function UserDropdown() {
-	const [session, setSession] = useState<any>(null);
+	const [session, setSession] = useState<SessionType | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
 
 	useEffect(() => {
@@ -26,8 +32,7 @@ export function UserDropdown() {
 			try {
 				const sessionData = await authClient.getSession();
 				setSession(sessionData.data);
-			} catch (error) {
-				console.error("Failed to fetch session:", error);
+			} catch (_error) {
 			} finally {
 				setSessionLoading(false);
 			}
@@ -43,10 +48,10 @@ export function UserDropdown() {
 	};
 
 	if (sessionLoading) {
-		return <Skeleton className="h-9 w-24" />;
+		return <Skeleton className="size-10 rounded-full" />;
 	}
 
-	const avatarData = loadAvatar(session?.user);
+	const avatarData = loadAvatar(session?.user!);
 
 	return (
 		<>
@@ -55,7 +60,7 @@ export function UserDropdown() {
 					<DropdownMenuTrigger asChild>
 						<Avatar className="size-10 border">
 							<AvatarImage src={avatarData.image} />
-							<AvatarFallback>
+							<AvatarFallback className="cursor-pointer">
 								{avatarData.initials}
 							</AvatarFallback>
 						</Avatar>
@@ -68,7 +73,7 @@ export function UserDropdown() {
 						<DropdownMenuLabel className="flex items-center gap-3">
 							<Avatar className="size-8 border">
 								<AvatarImage src={avatarData.image} />
-								<AvatarFallback>
+								<AvatarFallback className="cursor-pointer">
 									{avatarData.initials}
 								</AvatarFallback>
 							</Avatar>

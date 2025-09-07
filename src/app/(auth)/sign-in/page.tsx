@@ -1,10 +1,13 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -20,14 +23,11 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { type SignInData, signInSchema } from "@/lib/auth-schema";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { authClient } from "@/lib/auth-client";
+import { type SignInData, signInSchema } from "@/lib/auth-schema";
 import { getInputType } from "../_components/get-input-type";
-import { Loader2 } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { GoogleAuthButton } from "../_components/google-auth-button";
 
 export default function SignIn() {

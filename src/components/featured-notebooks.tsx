@@ -1,3 +1,5 @@
+import { Dot } from "lucide-react";
+import Link from "next/link";
 import {
 	Card,
 	CardContent,
@@ -6,8 +8,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { featuredNotebooks } from "@/data/notebooks";
-import { Dot } from "lucide-react";
-import Link from "next/link";
 
 export const FeaturedNotebooks = () => {
 	return (

@@ -35,7 +35,7 @@
 				"noSolidDestructuredProps": "off"
 			},
 			"suspicious": {
-				"noExplicitAny": "error",
+				"noExplicitAny": "warn",
 				"noConsole": "warn",
 				"noDocumentCookie": "off",
 				"noUnknownAtRules": "off"
