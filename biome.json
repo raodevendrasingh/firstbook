@@ -14,7 +14,8 @@
 		"indentStyle": "tab",
 		"indentWidth": 4,
 		"lineWidth": 80,
-		"formatWithErrors": true
+		"formatWithErrors": true,
+		"attributePosition": "auto"
 	},
 	"javascript": {
 		"formatter": {
