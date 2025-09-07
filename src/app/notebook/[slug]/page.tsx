@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { CopyIcon, GlobeIcon, RefreshCcwIcon } from "lucide-react";
-import { Fragment, use, useState } from "react";
+import { Fragment, use, useEffect, useState } from "react";
 import { Action, Actions } from "@/components/ai-elements/actions";
 import {
 	Conversation,
@@ -59,7 +59,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const [model, setModel] = useState<string>(models[0].value);
 	const [webSearch, setWebSearch] = useState(false);
 
-	const { messages, sendMessage, status, regenerate } = useChat({
+	const { messages, sendMessage, status, regenerate, setMessages } = useChat({
 		transport: new DefaultChatTransport({
 			api: "/api/chat",
 		}),
@@ -73,6 +73,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 				{
 					body: {
 						model: model,
+						chatId: slug,
 						webSearch: webSearch,
 					},
 				},
@@ -80,6 +81,16 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 			setInput("");
 		}
 	};
+
+	useEffect(() => {
+		fetch(`/api/chat?chatId=${slug}`)
+			.then((res) => res.json())
+			.then((data) => {
+				setMessages(data.messages);
+			});
+	}, [slug]);
+
+
 	return (
 		<div className="max-w-4xl mx-auto p-6 relative size-full h-screen">
 			<div className="flex flex-col h-full">

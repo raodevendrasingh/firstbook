@@ -4,6 +4,7 @@
     "": {
       "name": "exa_lm",
       "dependencies": {
+        "@ai-sdk/google": "^2.0.12",
         "@ai-sdk/react": "^2.0.34",
         "@hookform/resolvers": "^5.2.1",
         "@neondatabase/serverless": "^1.0.1",
@@ -58,6 +59,8 @@
   },
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@1.0.19", "", { "dependencies": { "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-TYLxx8Sclr/RdB0RIwGmA8OtJtyJxoPGtrTYgwrbzM2GdtwYtUuA/UIc4tZyCeyR1ujfqjbqiIF3kB54zGRD3A=="],
+
+    "@ai-sdk/google": ["@ai-sdk/google@2.0.12", "", { "dependencies": { "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-BH3w0hPddNo82okuF/UmCZreKibUSDTW/SED0sBWlrj16S9/H/Urzf4mBwwT419kVenb8XvO55KJ6Byc8ONNXQ=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@2.0.0", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA=="],
 
