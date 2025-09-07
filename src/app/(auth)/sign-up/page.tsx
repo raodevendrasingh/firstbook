@@ -57,8 +57,7 @@ export default function SignUp() {
 				},
 				onSuccess: async () => {
 					toast.success("Signed up successfully");
-
-					router.push("/");
+					router.push("/notebooks");
 				},
 				onError: (ctx) => {
 					setIsPending(false);

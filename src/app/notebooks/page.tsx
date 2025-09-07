@@ -5,11 +5,11 @@ import { Header } from "@/components/header";
 import { RecentNotebooks } from "@/components/recent-notebooks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function Home() {
+export default function Notebooks() {
 	return (
 		<div className="flex flex-col">
 			<Header />
-			<div className="flex flex-col mt-20 min-h-[calc(100vh-5rem)] max-w-6xl w-full items-start justify-start mx-auto px-8">
+			<div className="flex flex-col mt-20 min-h-[calc(100vh-5rem)] pb-10 max-w-6xl w-full items-start justify-start mx-auto px-8">
 				<div className="flex flex-col items-start justify-start w-full">
 					<Tabs defaultValue="all" className="">
 						<TabsList className="bg-transparent gap-2 border">

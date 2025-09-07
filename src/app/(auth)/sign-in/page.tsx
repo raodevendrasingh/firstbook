@@ -54,12 +54,12 @@ export default function SignIn() {
 					setIsPending(true);
 				},
 				onSuccess: async () => {
-					toast.success("Signed up successfully");
-					router.push("/");
+					toast.success("Signed in successfully");
+					router.push("/notebooks");
 				},
 				onError: (ctx) => {
 					setIsPending(false);
-					toast.error("Failed to sign up", {
+					toast.error("Failed to sign in", {
 						description:
 							typeof ctx.error === "string"
 								? ctx.error
