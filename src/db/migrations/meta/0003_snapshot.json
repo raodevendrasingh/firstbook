@@ -1,6 +1,6 @@
 {
-	"id": "2a7b26d3-b92c-4700-b41c-7551f1fc0cd3",
-	"prevId": "bd156506-d7b1-4273-83ab-3f9a77e4f031",
+	"id": "d50da5b9-0a0e-483e-bfe7-e54251b40a92",
+	"prevId": "7c9466bf-361c-4b0b-92bd-ddd560be36ed",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -42,6 +42,59 @@
 					"columnsFrom": ["userId"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.embedding": {
+			"name": "embedding",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"resourceId": {
+					"name": "resourceId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"vector": {
+					"name": "vector",
+					"type": "vector(1536)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"model": {
+					"name": "model",
+					"type": "varchar",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"createdAt": {
+					"name": "createdAt",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"embedding_resourceId_resource_id_fk": {
+					"name": "embedding_resourceId_resource_id_fk",
+					"tableFrom": "embedding",
+					"tableTo": "resource",
+					"columnsFrom": ["resourceId"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
 					"onUpdate": "no action"
 				}
 			},
@@ -117,13 +170,7 @@
 				"id": {
 					"name": "id",
 					"type": "text",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"createdAt": {
-					"name": "createdAt",
-					"type": "timestamp",
-					"primaryKey": false,
+					"primaryKey": true,
 					"notNull": true
 				},
 				"title": {
@@ -145,15 +192,61 @@
 					"notNull": true,
 					"default": "'text'"
 				},
+				"source": {
+					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"vectorId": {
+					"name": "vectorId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"status": {
+					"name": "status",
+					"type": "varchar",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "'fetched'"
+				},
+				"chatId": {
+					"name": "chatId",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
 				"userId": {
 					"name": "userId",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true
+				},
+				"createdAt": {
+					"name": "createdAt",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"metadata": {
+					"name": "metadata",
+					"type": "json",
+					"primaryKey": false,
+					"notNull": false
 				}
 			},
 			"indexes": {},
 			"foreignKeys": {
+				"resource_chatId_chat_id_fk": {
+					"name": "resource_chatId_chat_id_fk",
+					"tableFrom": "resource",
+					"tableTo": "chat",
+					"columnsFrom": ["chatId"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
 				"resource_userId_user_id_fk": {
 					"name": "resource_userId_user_id_fk",
 					"tableFrom": "resource",
@@ -164,12 +257,7 @@
 					"onUpdate": "no action"
 				}
 			},
-			"compositePrimaryKeys": {
-				"resource_id_createdAt_pk": {
-					"name": "resource_id_createdAt_pk",
-					"columns": ["id", "createdAt"]
-				}
-			},
+			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
 			"checkConstraints": {},

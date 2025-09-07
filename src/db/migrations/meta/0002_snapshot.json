@@ -1,6 +1,6 @@
 {
-	"id": "2a7b26d3-b92c-4700-b41c-7551f1fc0cd3",
-	"prevId": "bd156506-d7b1-4273-83ab-3f9a77e4f031",
+	"id": "7c9466bf-361c-4b0b-92bd-ddd560be36ed",
+	"prevId": "2a7b26d3-b92c-4700-b41c-7551f1fc0cd3",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -38,11 +38,11 @@
 				"chat_userId_user_id_fk": {
 					"name": "chat_userId_user_id_fk",
 					"tableFrom": "chat",
-					"tableTo": "user",
 					"columnsFrom": ["userId"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -97,11 +97,11 @@
 				"message_chatId_chat_id_fk": {
 					"name": "message_chatId_chat_id_fk",
 					"tableFrom": "message",
-					"tableTo": "chat",
 					"columnsFrom": ["chatId"],
+					"tableTo": "chat",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -157,11 +157,11 @@
 				"resource_userId_user_id_fk": {
 					"name": "resource_userId_user_id_fk",
 					"tableFrom": "resource",
-					"tableTo": "user",
 					"columnsFrom": ["userId"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "no action"
 				}
 			},
 			"compositePrimaryKeys": {
@@ -264,11 +264,11 @@
 				"account_user_id_user_id_fk": {
 					"name": "account_user_id_user_id_fk",
 					"tableFrom": "account",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -336,19 +336,19 @@
 				"session_user_id_user_id_fk": {
 					"name": "session_user_id_user_id_fk",
 					"tableFrom": "session",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {
 				"session_token_unique": {
 					"name": "session_token_unique",
-					"nullsNotDistinct": false,
-					"columns": ["token"]
+					"columns": ["token"],
+					"nullsNotDistinct": false
 				}
 			},
 			"policies": {},
@@ -411,8 +411,8 @@
 			"uniqueConstraints": {
 				"user_email_unique": {
 					"name": "user_email_unique",
-					"nullsNotDistinct": false,
-					"columns": ["email"]
+					"columns": ["email"],
+					"nullsNotDistinct": false
 				}
 			},
 			"policies": {},
@@ -473,10 +473,10 @@
 	},
 	"enums": {},
 	"schemas": {},
+	"views": {},
 	"sequences": {},
 	"roles": {},
 	"policies": {},
-	"views": {},
 	"_meta": {
 		"columns": {},
 		"schemas": {},
