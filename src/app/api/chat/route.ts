@@ -4,10 +4,19 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
-import { message } from "@/db/schema";
+import { chat, message } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { generateTitleFromUserMessage } from "@/utils/generateTitleFromUserMessage";
 
 export const maxDuration = 30;
+
+type MessagePayload = {
+	model: string;
+	chatId: string;
+	webSearch: boolean;
+	id: string;
+	messages: UIMessage[];
+};
 
 export async function POST(req: Request) {
 	const session = await auth.api.getSession({
@@ -20,8 +29,21 @@ export async function POST(req: Request) {
 			{ status: 401 },
 		);
 	}
-	const { messages, chatId }: { messages: UIMessage[]; chatId: string } =
-		await req.json();
+
+	const { messages, chatId, model }: MessagePayload = await req.json();
+
+	if (messages.length === 1) {
+		generateTitleFromUserMessage({
+			message: messages[0],
+		})
+			.then(async (title) => {
+				await db.update(chat).set({ title }).where(eq(chat.id, chatId));
+				console.log("Title generated:", title);
+			})
+			.catch((error) => {
+				console.error("Failed to generate title:", error);
+			});
+	}
 
 	const latestUserMessage = messages[messages.length - 1];
 
@@ -35,7 +57,7 @@ export async function POST(req: Request) {
 	});
 
 	const result = streamText({
-		model: google("gemini-2.0-flash"),
+		model: google(model),
 		system: "You are a helpful assistant.",
 		messages: convertToModelMessages(messages),
 		onFinish: async (result) => {
@@ -65,12 +87,33 @@ export async function GET(req: Request) {
 			);
 		}
 
+		const notebook = await db
+			.select()
+			.from(chat)
+			.where(eq(chat.id, chatId));
+
+		if (!notebook) {
+			return Response.json(
+				{ success: false, error: "Chat not found" },
+				{ status: 404 },
+			);
+		}
+
+		const title = notebook[0].title;
+
 		const messages = await db
 			.select()
 			.from(message)
 			.where(eq(message.chatId, chatId));
 
-		return Response.json({ success: true, messages }, { status: 200 });
+		return Response.json(
+			{
+				success: true,
+				message: "Chat fetched",
+				data: { messages, title },
+			},
+			{ status: 200 },
+		);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";

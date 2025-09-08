@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { loadAvatar } from "@/lib/avatar-utils";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 type SessionType = {
@@ -23,7 +24,11 @@ type SessionType = {
 	session: Session;
 };
 
-export function UserDropdown() {
+interface UserDropdownProps {
+	className?: string;
+}
+
+export function UserDropdown({ className }: UserDropdownProps) {
 	const [session, setSession] = useState<SessionType | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
 
@@ -58,7 +63,7 @@ export function UserDropdown() {
 			{session ? (
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Avatar className="size-10 border">
+						<Avatar className={cn("size-10 border", className)}>
 							<AvatarImage src={avatarData.image} />
 							<AvatarFallback className="cursor-pointer">
 								{avatarData.initials}

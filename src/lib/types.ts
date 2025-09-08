@@ -1,3 +1,5 @@
+import type { UIMessage } from "ai";
+
 export type notebooksWithCounts = {
 	resourceCount: number;
 	id: string;
@@ -23,5 +25,23 @@ export type FetchNotebooksResponse =
 			data: {
 				notebooks: notebooksWithCounts[];
 			};
+	  }
+	| { success: false; error: string };
+
+export type FetchChatResponse =
+	| {
+			success: true;
+			message: string;
+			data: {
+				messages: UIMessage[];
+				title: string;
+			};
+	  }
+	| { success: false; error: string };
+
+export type DeleteNotebookResponse =
+	| {
+			success: true;
+			message: string;
 	  }
 	| { success: false; error: string };
