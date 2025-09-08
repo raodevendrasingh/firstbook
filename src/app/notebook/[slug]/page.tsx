@@ -2,54 +2,17 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import {
-	ArrowLeftIcon,
-	CopyIcon,
-	GlobeIcon,
-	PlusIcon,
-	RefreshCcwIcon,
-} from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Fragment, use, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Action, Actions } from "@/components/ai-elements/actions";
-import {
-	Conversation,
-	ConversationContent,
-	ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { Loader } from "@/components/ai-elements/loader";
-import { Message, MessageContent } from "@/components/ai-elements/message";
-import {
-	PromptInput,
-	PromptInputButton,
-	PromptInputModelSelect,
-	PromptInputModelSelectContent,
-	PromptInputModelSelectItem,
-	PromptInputModelSelectTrigger,
-	PromptInputModelSelectValue,
-	PromptInputSubmit,
-	PromptInputTextarea,
-	PromptInputToolbar,
-	PromptInputTools,
-} from "@/components/ai-elements/prompt-input";
-import {
-	Reasoning,
-	ReasoningContent,
-	ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
-import { Response } from "@/components/ai-elements/response";
-import {
-	Source,
-	Sources,
-	SourcesContent,
-	SourcesTrigger,
-} from "@/components/ai-elements/sources";
+import { ChatContainer } from "@/components/chat-container";
 import { SourceDialog } from "@/components/source-dialog";
+import { SourcePanel } from "@/components/source-panel";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
 import type { FetchChatResponse } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const models = [
 	{
@@ -86,7 +49,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const [webSearch, setWebSearch] = useState<boolean>(false);
 	const [title, setTitle] = useState<string>("");
 	const [sourceDialogOpen, setSourceDialogOpen] = useState<boolean>(false);
-	const [sourcePanelOpen, setSourcePanelOpen] = useState<boolean>(false);
 
 	const { messages, sendMessage, status, regenerate, setMessages } = useChat({
 		transport: new DefaultChatTransport({
@@ -173,248 +135,74 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							<ArrowLeftIcon className="size-4" />
 						</Button>
 
-						<span className="text-xl font-medium">
+						<span className="text-base line-clamp-1 md:text-xl font-medium">
 							{title.length > 0 ? title : "Untitled Notebook"}
 						</span>
 					</div>
-					<div className="flex flex-row items-center gap-3">
-						<Button
-							size="icon"
-							className="rounded-full md:hidden"
-							onClick={() => setSourceDialogOpen(true)}
-						>
-							<PlusIcon />
-						</Button>
-						<Button
-							size="icon"
-							className="rounded-full md:hidden"
-							onClick={() => setSourcePanelOpen((prev) => !prev)}
-						>
-							<GlobeIcon />
-						</Button>
-						<UserDropdown className="hidden md:block" />
-					</div>
+					<UserDropdown />
 				</div>
 			</nav>
-			<div className="w-full mx-auto items-center justify-center flex flex-row gap-2 p-2 pt-16 relative">
-				{/* Chat Container */}
-				<div className="w-full mx-auto relative size-full h-[calc(100vh-4.5rem)] border border-border rounded-md">
-					<div className="flex items-center justify-between gap-3 border-b px-3 py-2 bg-accent rounded-t-md">
-						<div className="flex items-center justify-start gap-3">
-							<div className="font-medium">Chat</div>
-						</div>
-					</div>
-					<div className="flex flex-col h-[calc(100vh-7rem)] p-3">
-						<Conversation className="h-full">
-							<ConversationContent>
-								{messages.map((message) => (
-									<div key={message.id}>
-										{message.role === "assistant" &&
-											message.parts.filter(
-												(part) =>
-													part.type === "source-url",
-											).length > 0 && (
-												<Sources>
-													<SourcesTrigger
-														count={
-															message.parts.filter(
-																(part) =>
-																	part.type ===
-																	"source-url",
-															).length
-														}
-													/>
-													{message.parts
-														.filter(
-															(part) =>
-																part.type ===
-																"source-url",
-														)
-														.map((part, i) => (
-															<SourcesContent
-																key={`${message.id}-${i}`}
-															>
-																<Source
-																	key={`${message.id}-${i}`}
-																	href={
-																		part.url
-																	}
-																	title={
-																		part.url
-																	}
-																/>
-															</SourcesContent>
-														))}
-												</Sources>
-											)}
-										{message.parts.map((part, i) => {
-											switch (part.type) {
-												case "text":
-													return (
-														<Fragment
-															key={`${message.id}-${i}`}
-														>
-															<Message
-																from={
-																	message.role
-																}
-															>
-																<MessageContent>
-																	<Response>
-																		{
-																			part.text
-																		}
-																	</Response>
-																</MessageContent>
-															</Message>
-															{message.role ===
-																"assistant" &&
-																i ===
-																	messages.length -
-																		1 && (
-																	<Actions className="mt-2">
-																		<Action
-																			onClick={() =>
-																				regenerate()
-																			}
-																			label="Retry"
-																		>
-																			<RefreshCcwIcon className="size-3" />
-																		</Action>
-																		<Action
-																			onClick={() =>
-																				navigator.clipboard.writeText(
-																					part.text,
-																				)
-																			}
-																			label="Copy"
-																		>
-																			<CopyIcon className="size-3" />
-																		</Action>
-																	</Actions>
-																)}
-														</Fragment>
-													);
-												case "reasoning":
-													return (
-														<Reasoning
-															key={`${message.id}-${i}`}
-															className="w-full"
-															isStreaming={
-																status ===
-																	"streaming" &&
-																i ===
-																	message
-																		.parts
-																		.length -
-																		1 &&
-																message.id ===
-																	messages.at(
-																		-1,
-																	)?.id
-															}
-														>
-															<ReasoningTrigger />
-															<ReasoningContent>
-																{part.text}
-															</ReasoningContent>
-														</Reasoning>
-													);
-												default:
-													return null;
-											}
-										})}
-									</div>
-								))}
-								{status === "submitted" && <Loader />}
-							</ConversationContent>
-							<ConversationScrollButton />
-						</Conversation>
 
-						<PromptInput onSubmit={handleSubmit} className="mt-4">
-							<PromptInputTextarea
-								onChange={(e) => setInput(e.target.value)}
-								value={input}
-							/>
-							<PromptInputToolbar>
-								<PromptInputTools>
-									<PromptInputButton
-										variant={
-											webSearch ? "default" : "ghost"
-										}
-										onClick={() => setWebSearch(!webSearch)}
-									>
-										<GlobeIcon size={16} />
-										<span>Search</span>
-									</PromptInputButton>
-									<PromptInputModelSelect
-										onValueChange={(value) => {
-											setModel(value);
-										}}
-										value={model}
-									>
-										<PromptInputModelSelectTrigger>
-											<PromptInputModelSelectValue />
-										</PromptInputModelSelectTrigger>
-										<PromptInputModelSelectContent>
-											{models.map((model) => (
-												<PromptInputModelSelectItem
-													key={model.value}
-													value={model.value}
-												>
-													{model.name}
-												</PromptInputModelSelectItem>
-											))}
-										</PromptInputModelSelectContent>
-									</PromptInputModelSelect>
-								</PromptInputTools>
-								<PromptInputSubmit
-									disabled={!input}
-									status={status}
-								/>
-							</PromptInputToolbar>
-						</PromptInput>
-					</div>
+			{/* Mobile Tabs */}
+			<Tabs defaultValue="chat" className="pt-16 block md:hidden">
+				<TabsList className="mx-2">
+					<TabsTrigger value="chat">Chat</TabsTrigger>
+					<TabsTrigger value="sources">Sources</TabsTrigger>
+				</TabsList>
+				<div className="flex flex-col h-[calc(100vh-6.7rem)]">
+					<TabsContent value="chat" className="p-2">
+						<ChatContainer
+							className="block md:hidden h-[calc(100vh-7.3rem)] "
+							title="Chat"
+							messages={messages}
+							status={status}
+							regenerate={regenerate}
+							input={input}
+							setInput={setInput}
+							handleSubmit={handleSubmit}
+							webSearch={webSearch}
+							setWebSearch={setWebSearch}
+							model={model}
+							setModel={setModel}
+							models={models}
+						/>
+					</TabsContent>
+					<TabsContent value="sources" className="p-2">
+						<SourcePanel
+							setSourceDialogOpen={setSourceDialogOpen}
+							className="block md:hidden"
+						/>
+					</TabsContent>
 				</div>
-				{/* Sources Panel */}
-				<div
-					className={cn(
-						"hidden md:block md:relative md:max-w-xs lg:max-w-md h-[calc(100vh-4.5rem)] bg-background border w-full rounded-md",
-						sourcePanelOpen
-							? "block fixed top-16 left-2 right-2 bottom-0 z-40 bg-background md:relative md:inset-auto md:z-auto md:w-full"
-							: "hidden",
-					)}
-				>
-					<div className="flex items-center justify-between gap-3 border-b px-3 py-1 bg-accent rounded-t-md">
-						<div className="flex items-center justify-center gap-3">
-							<div className="font-medium">Sources</div>
-						</div>
-						<div className="flex items-center gap-3">
-							<Button
-								className="rounded-full md:hidden"
-								onClick={() => setSourcePanelOpen(false)}
-								variant="secondary"
-								size="icon"
-							>
-								<ArrowLeftIcon className="size-4" />
-							</Button>
-							<Button
-								variant="default"
-								className="rounded-full"
-								size="sm"
-								onClick={() => setSourceDialogOpen(true)}
-							>
-								<PlusIcon className="size-4" />
-								Add
-							</Button>
-						</div>
-					</div>
-					<div className="flex flex-col gap-2 p-3 bg-background" />
-				</div>
+			</Tabs>
+
+			{/* Desktop Layout */}
+			<div className="w-full mx-auto items-center justify-center md:flex hidden flex-row gap-2 p-2 pt-16 relative">
+				<ChatContainer
+					className="hidden md:block h-[calc(100vh-4.5rem)]"
+					title="Chat"
+					messages={messages}
+					status={status}
+					regenerate={regenerate}
+					input={input}
+					setInput={setInput}
+					handleSubmit={handleSubmit}
+					webSearch={webSearch}
+					setWebSearch={setWebSearch}
+					model={model}
+					setModel={setModel}
+					models={models}
+				/>
+				<SourcePanel
+					className="hidden md:block"
+					setSourceDialogOpen={setSourceDialogOpen}
+				/>
 			</div>
+
 			<SourceDialog
 				open={sourceDialogOpen}
 				onOpenChange={setSourceDialogOpen}
+				slug={slug}
 			/>
 		</>
 	);

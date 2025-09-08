@@ -4,7 +4,7 @@ import { UserDropdown } from "./user-dropdown";
 
 export const Header = () => {
 	return (
-		<nav className="fixed flex items-center h-16 w-full px-8 bg-primary-foreground">
+		<nav className="fixed flex items-center h-16 w-full px-8 bg-primary-foreground z-50">
 			<div className="flex w-full items-center justify-between max-w-7xl mx-auto">
 				<span className="text-3xl font-semibold">FirstbookLM</span>
 				<UserDropdown />

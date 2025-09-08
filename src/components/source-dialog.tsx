@@ -25,6 +25,7 @@ import { Textarea } from "./ui/textarea";
 interface SourceDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	slug: string;
 }
 
 const ResourceSchema = z.object({
@@ -49,7 +50,7 @@ const ResourceSchema = z.object({
 		),
 });
 
-export function SourceDialog({ open, onOpenChange }: SourceDialogProps) {
+export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
 	const form = useForm<z.infer<typeof ResourceSchema>>({
 		resolver: zodResolver(ResourceSchema),
 		defaultValues: {
@@ -63,10 +64,15 @@ export function SourceDialog({ open, onOpenChange }: SourceDialogProps) {
 			.filter((url) => url.trim() !== "")
 			.map((url) => url.trim());
 
+		const payload = {
+			urls: urlArray,
+			chatId: slug,
+		};
+
 		try {
 			const response = await fetch("/api/source", {
 				method: "POST",
-				body: JSON.stringify({ urls: urlArray }),
+				body: JSON.stringify(payload),
 			});
 			if (!response.ok) {
 				throw new Error("Failed to add source");

@@ -12,13 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-	Card,
-	CardContent,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -130,34 +124,25 @@ export const RecentNotebooks = () => {
 
 	return (
 		<div className="flex flex-col items-center gap-3 pt-10">
-			<div className="text-2xl font-medium w-full">My Notebooks</div>
-			<div className="flex flex-row items-center justify-start flex-wrap gap-5 w-full">
-				<Card
+			<div className="flex flex-row items-center justify-between w-full gap-2 pb-3">
+				<div className="text-2xl font-medium w-full">My Notebooks</div>
+				<Button
+					className="md:rounded-full gap-2"
 					onClick={handleCreateNewNotebook}
-					className="flex items-center justify-center rounded-sm w-64 h-48 p-3 cursor-pointer"
 				>
-					<CardContent className="flex flex-col items-center justify-center gap-4 px-3">
-						<Button
-							size="icon"
-							variant="secondary"
-							className="rounded-full size-16 cursor-pointer"
-						>
-							{isPending ? (
-								<Loader2 className="animate-spin" />
-							) : (
-								<Plus className="size-6" />
-							)}
-						</Button>
-						<span className="font-medium text-xl">
-							Create New Notebook
-						</span>
-					</CardContent>
-				</Card>
-
+					{isPending ? (
+						<Loader2 className="animate-spin" />
+					) : (
+						<Plus />
+					)}
+					<span className="hidden sm:block">Create Notebook</span>
+				</Button>
+			</div>
+			<div className="flex flex-row items-center justify-start flex-wrap gap-4 w-full">
 				{notebooks.map((nb) => (
 					<div key={nb.id} className="relative group">
 						<Link href={`/notebook/${nb.id}`}>
-							<Card className="rounded-sm w-64 h-48">
+							<Card className="rounded-lg w-60 h-32">
 								<CardHeader className="flex-1">
 									<CardTitle>
 										{nb.title.length > 0
@@ -165,7 +150,6 @@ export const RecentNotebooks = () => {
 											: "Untitled Notebook"}
 									</CardTitle>
 								</CardHeader>
-
 								<CardFooter className="flex items-center text-sm font-light">
 									<p>
 										{new Date(

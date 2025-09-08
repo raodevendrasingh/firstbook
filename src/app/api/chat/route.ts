@@ -38,10 +38,9 @@ export async function POST(req: Request) {
 		})
 			.then(async (title) => {
 				await db.update(chat).set({ title }).where(eq(chat.id, chatId));
-				console.log("Title generated:", title);
 			})
 			.catch((error) => {
-				console.error("Failed to generate title:", error);
+				// ignore error
 			});
 	}
 
