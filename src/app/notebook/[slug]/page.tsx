@@ -12,30 +12,8 @@ import { SourcePanel } from "@/components/source-panel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
+import { models } from "@/lib/model";
 import type { FetchChatResponse } from "@/lib/types";
-
-const models = [
-	{
-		name: "Gemini 2.5 Pro",
-		value: "gemini-2.5-pro",
-	},
-	{
-		name: "Gemini 2.5 Flash",
-		value: "gemini-2.5-flash",
-	},
-	{
-		name: "Gemini 2.5 Flash-Lite",
-		value: "gemini-2.5-flash-lite",
-	},
-	{
-		name: "Gemini 2.0 Flash",
-		value: "gemini-2.0-flash",
-	},
-	{
-		name: "Gemini 2.0 Flash-Lite",
-		value: "gemini-2.0-flash-lite",
-	},
-];
 
 interface NotebookPageProps {
 	params: Promise<{ slug: string }>;
@@ -49,6 +27,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const [webSearch, setWebSearch] = useState<boolean>(false);
 	const [title, setTitle] = useState<string>("");
 	const [sourceDialogOpen, setSourceDialogOpen] = useState<boolean>(false);
+	const [refreshSources, setRefreshSources] = useState<number>(0);
 
 	const { messages, sendMessage, status, regenerate, setMessages } = useChat({
 		transport: new DefaultChatTransport({
@@ -171,6 +150,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 						<SourcePanel
 							setSourceDialogOpen={setSourceDialogOpen}
 							className="block md:hidden"
+							chatId={slug}
 						/>
 					</TabsContent>
 				</div>
@@ -179,7 +159,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 			{/* Desktop Layout */}
 			<div className="w-full mx-auto items-center justify-center md:flex hidden flex-row gap-2 p-2 pt-16 relative">
 				<ChatContainer
-					className="hidden md:block h-[calc(100vh-4.5rem)]"
+					className="hidden md:flex flex-col h-[calc(100vh-4.5rem)]"
 					title="Chat"
 					messages={messages}
 					status={status}
@@ -194,8 +174,11 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					models={models}
 				/>
 				<SourcePanel
-					className="hidden md:block"
+					className="hidden md:flex"
 					setSourceDialogOpen={setSourceDialogOpen}
+					chatId={slug}
+					refreshTrigger={refreshSources}
+					onNoSourcesDetected={() => setSourceDialogOpen(true)}
 				/>
 			</div>
 
@@ -203,6 +186,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 				open={sourceDialogOpen}
 				onOpenChange={setSourceDialogOpen}
 				slug={slug}
+				onSourcesAdded={() => setRefreshSources((prev) => prev + 1)}
 			/>
 		</>
 	);

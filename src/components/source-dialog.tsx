@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import {
 	Dialog,
 	DialogContent,
@@ -19,50 +20,34 @@ import {
 	FormItem,
 	FormMessage,
 } from "@/components/ui/form";
+import { parseUrls, type ResourceData, resourceSchema } from "@/lib/app-schema";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 
 interface SourceDialogProps {
+	slug: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	slug: string;
+	onSourcesAdded?: () => void;
 }
 
-const ResourceSchema = z.object({
-	urls: z
-		.string()
-		.min(1, { message: "URLs are required" })
-		.refine(
-			(str) => {
-				const urlArray = str
-					.split("\n")
-					.filter((url) => url.trim() !== "");
-				return urlArray.every((url) => {
-					try {
-						new URL(url.trim());
-						return true;
-					} catch {
-						return false;
-					}
-				});
-			},
-			{ message: "Please enter valid URLs, separated by new lines" },
-		),
-});
+export function SourceDialog({
+	slug,
+	open,
+	onOpenChange,
+	onSourcesAdded,
+}: SourceDialogProps) {
+	const [isPending, setIsPending] = useState<boolean>(false);
 
-export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
-	const form = useForm<z.infer<typeof ResourceSchema>>({
-		resolver: zodResolver(ResourceSchema),
+	const form = useForm<ResourceData>({
+		resolver: zodResolver(resourceSchema),
 		defaultValues: {
 			urls: "",
 		},
 	});
 
-	async function onSubmit(values: z.infer<typeof ResourceSchema>) {
-		const urlArray = values.urls
-			.split("\n")
-			.filter((url) => url.trim() !== "")
-			.map((url) => url.trim());
+	async function onSubmit(values: ResourceData) {
+		const urlArray = parseUrls(values.urls);
 
 		const payload = {
 			urls: urlArray,
@@ -70,19 +55,24 @@ export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
 		};
 
 		try {
-			const response = await fetch("/api/source", {
+			setIsPending(true);
+			const res = await fetch("/api/source", {
 				method: "POST",
 				body: JSON.stringify(payload),
 			});
-			if (!response.ok) {
+			if (!res.ok) {
 				throw new Error("Failed to add source");
 			}
+			toast.success("Resources added");
+			form.reset({ urls: "" });
+			onOpenChange(false);
+			onSourcesAdded?.();
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : "Unknown error";
-			toast.error("Failed to add source", {
-				description: errorMessage,
-			});
+			toast.error(errorMessage);
+		} finally {
+			setIsPending(false);
 		}
 	}
 
@@ -111,7 +101,7 @@ export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
 									<FormItem className="flex-1 flex flex-col">
 										<FormControl className="flex-1">
 											<Textarea
-												placeholder="Paste URLs here, separated by new lines"
+												placeholder="Paste URLs here, separated by commas or new lines"
 												className="h-full resize-none font-mono"
 												spellCheck={false}
 												{...field}
@@ -122,8 +112,9 @@ export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
 										</FormDescription>
 										<ul className="list-disc list-inside text-sm text-muted-foreground mx-2">
 											<li>
-												To add multiple URLs, separate
-												with a new line.
+												To add upto five (5) URLs,
+												separate with a comma or new
+												line.
 											</li>
 											<li>
 												Only the visible text on the
@@ -138,7 +129,17 @@ export function SourceDialog({ open, onOpenChange, slug }: SourceDialogProps) {
 								)}
 							/>
 							<div className="flex justify-end flex-shrink-0 mt-4">
-								<Button type="submit">Submit</Button>
+								<Button
+									type="submit"
+									disabled={isPending}
+									className="w-28"
+								>
+									{isPending ? (
+										<Loader2 className="animate-spin" />
+									) : (
+										"Submit"
+									)}
+								</Button>
 							</div>
 						</form>
 					</Form>

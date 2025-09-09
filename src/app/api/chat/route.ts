@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { google } from "@ai-sdk/google";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, message } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { generateTitleFromUserMessage } from "@/utils/generateTitleFromUserMessage";
+import { generateTitleFromUserMessage } from "@/utils/generate-title-from-user-message";
 
 export const maxDuration = 30;
 
@@ -32,7 +32,22 @@ export async function POST(req: Request) {
 
 	const { messages, chatId, model }: MessagePayload = await req.json();
 
-	if (messages.length === 1) {
+	const chatResult = await db
+		.select()
+		.from(chat)
+		.where(and(eq(chat.id, chatId), eq(chat.userId, session.user.id)))
+		.then((res) => res[0]);
+
+	if (!chatResult) {
+		return Response.json(
+			{ success: false, error: "Chat not found" },
+			{ status: 404 },
+		);
+	}
+
+	const chatTitle = chatResult.title;
+
+	if (messages.length === 1 && chatTitle.length === 0) {
 		generateTitleFromUserMessage({
 			message: messages[0],
 		})

@@ -140,7 +140,6 @@ export async function DELETE(req: Request) {
 			);
 		}
 
-		// Verify the notebook belongs to the user
 		const notebook = await db
 			.select()
 			.from(chat)
@@ -155,14 +154,11 @@ export async function DELETE(req: Request) {
 			);
 		}
 
-		// Delete all related messages first
-		await db.delete(message).where(eq(message.chatId, notebookId));
-
-		// Delete all related resources
-		await db.delete(resource).where(eq(resource.chatId, notebookId));
-
-		// Delete the notebook
-		await db.delete(chat).where(eq(chat.id, notebookId));
+		await db.transaction(async (tx) => {
+			await tx.delete(message).where(eq(message.chatId, notebookId));
+			await tx.delete(resource).where(eq(resource.chatId, notebookId));
+			await tx.delete(chat).where(eq(chat.id, notebookId));
+		});
 
 		return Response.json(
 			{

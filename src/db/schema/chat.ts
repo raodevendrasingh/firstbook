@@ -1,5 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
+	integer,
 	json,
 	pgTable,
 	text,
@@ -56,7 +57,12 @@ export const embedding = pgTable("embedding", {
 	resourceId: text("resourceId")
 		.notNull()
 		.references(() => resource.id, { onDelete: "cascade" }),
+	chatId: text("chatId")
+		.notNull()
+		.references(() => chat.id),
+	chunk: text("chunk").notNull(),
 	vector: vector("vector", { dimensions: 1536 }).notNull(),
+	position: integer("position").notNull(),
 	model: varchar("model").notNull(),
 	createdAt: timestamp("createdAt").notNull(),
 });
@@ -64,3 +70,4 @@ export const embedding = pgTable("embedding", {
 export type Chat = InferSelectModel<typeof chat>;
 export type Message = InferSelectModel<typeof message>;
 export type Resource = InferSelectModel<typeof resource>;
+export type Embedding = InferSelectModel<typeof embedding>;
