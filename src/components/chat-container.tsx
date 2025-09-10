@@ -1,12 +1,18 @@
 "use client";
 
 import type { ChatStatus, UIMessage } from "ai";
-import { CopyIcon, GlobeIcon, RefreshCcwIcon } from "lucide-react";
+import {
+	CopyIcon,
+	GlobeIcon,
+	MessageSquare,
+	RefreshCcwIcon,
+} from "lucide-react";
 import { Fragment } from "react";
 import { Action, Actions } from "@/components/ai-elements/actions";
 import {
 	Conversation,
 	ConversationContent,
+	ConversationEmptyState,
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Loader } from "@/components/ai-elements/loader";
@@ -83,116 +89,124 @@ export function ChatContainer({
 			</div>
 			<div className="flex flex-col h-[calc(100vh-9.3rem)] md:h-[calc(100vh-7rem)] p-3">
 				<Conversation className="h-full">
-					<ConversationContent className=" py-0">
-						{messages.map((message) => (
-							<div key={message.id}>
-								{message.role === "assistant" &&
-									message.parts.filter(
-										(part) => part.type === "source-url",
-									).length > 0 && (
-										<Sources>
-											<SourcesTrigger
-												count={
-													message.parts.filter(
+					<ConversationContent>
+						{messages.length === 0 ? (
+							<ConversationEmptyState
+								icon={<MessageSquare className="size-12" />}
+								title="No messages yet"
+								description="Start a conversation to see messages here"
+							/>
+						) : (
+							messages.map((message) => (
+								<div key={message.id}>
+									{message.role === "assistant" &&
+										message.parts.filter(
+											(part) =>
+												part.type === "source-url",
+										).length > 0 && (
+											<Sources>
+												<SourcesTrigger
+													count={
+														message.parts.filter(
+															(part) =>
+																part.type ===
+																"source-url",
+														).length
+													}
+												/>
+												{message.parts
+													.filter(
 														(part) =>
 															part.type ===
 															"source-url",
-													).length
-												}
-											/>
-											{message.parts
-												.filter(
-													(part) =>
-														part.type ===
-														"source-url",
-												)
-												.map((part, i: number) => (
-													<SourcesContent
+													)
+													.map((part, i) => (
+														<SourcesContent
+															key={`${message.id}-${i}`}
+														>
+															<Source
+																key={`${message.id}-${i}`}
+																href={part.url}
+																title={part.url}
+															/>
+														</SourcesContent>
+													))}
+											</Sources>
+										)}
+									{message.parts.map((part, i) => {
+										switch (part.type) {
+											case "text":
+												return (
+													<Fragment
 														key={`${message.id}-${i}`}
 													>
-														<Source
-															key={`${message.id}-${i}`}
-															href={part.url}
-															title={part.url}
-														/>
-													</SourcesContent>
-												))}
-										</Sources>
-									)}
-								{message.parts.map((part, i: number) => {
-									switch (part.type) {
-										case "text":
-											return (
-												<Fragment
-													key={`${message.id}-${i}`}
-												>
-													<Message
-														from={message.role}
-													>
-														<MessageContent>
-															<div className="text-sm whitespace-pre-wrap">
+														<Message
+															from={message.role}
+														>
+															<MessageContent variant="flat">
 																<Response>
 																	{part.text}
 																</Response>
-															</div>
-														</MessageContent>
-													</Message>
-													{message.role ===
-														"assistant" &&
-														i ===
-															messages.length -
-																1 && (
-															<Actions className="mt-2">
-																<Action
-																	onClick={() =>
-																		regenerate()
-																	}
-																	label="Retry"
-																>
-																	<RefreshCcwIcon className="size-3" />
-																</Action>
-																<Action
-																	onClick={() =>
-																		navigator.clipboard.writeText(
-																			part.text,
-																		)
-																	}
-																	label="Copy"
-																>
-																	<CopyIcon className="size-3" />
-																</Action>
-															</Actions>
-														)}
-												</Fragment>
-											);
-										case "reasoning":
-											return (
-												<Reasoning
-													key={`${message.id}-${i}`}
-													className="w-full"
-													isStreaming={
-														status ===
-															"streaming" &&
-														i ===
-															message.parts
-																.length -
-																1 &&
-														message.id ===
-															messages.at(-1)?.id
-													}
-												>
-													<ReasoningTrigger />
-													<ReasoningContent>
-														{part.text}
-													</ReasoningContent>
-												</Reasoning>
-											);
-										default:
-											return null;
-									}
-								})}
-							</div>
-						))}
+															</MessageContent>
+														</Message>
+														{message.role ===
+															"assistant" &&
+															i ===
+																messages.length -
+																	1 && (
+																<Actions className="mt-2">
+																	<Action
+																		onClick={() =>
+																			regenerate()
+																		}
+																		label="Retry"
+																	>
+																		<RefreshCcwIcon className="size-3" />
+																	</Action>
+																	<Action
+																		onClick={() =>
+																			navigator.clipboard.writeText(
+																				part.text,
+																			)
+																		}
+																		label="Copy"
+																	>
+																		<CopyIcon className="size-3" />
+																	</Action>
+																</Actions>
+															)}
+													</Fragment>
+												);
+											case "reasoning":
+												return (
+													<Reasoning
+														key={`${message.id}-${i}`}
+														className="w-full"
+														isStreaming={
+															status ===
+																"streaming" &&
+															i ===
+																message.parts
+																	.length -
+																	1 &&
+															message.id ===
+																messages.at(-1)
+																	?.id
+														}
+													>
+														<ReasoningTrigger />
+														<ReasoningContent>
+															{part.text}
+														</ReasoningContent>
+													</Reasoning>
+												);
+											default:
+												return null;
+										}
+									})}
+								</div>
+							))
+						)}
 						{status === "submitted" && <Loader />}
 					</ConversationContent>
 					<ConversationScrollButton />

@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps, HTMLAttributes } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -20,21 +21,40 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
 	/>
 );
 
-export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
+const messageContentVariants = cva(
+	"is-user:dark flex flex-col gap-2 overflow-hidden rounded-xl text-sm",
+	{
+		variants: {
+			variant: {
+				contained: [
+					"max-w-[80%] px-4 py-3",
+					"group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground",
+					"group-[.is-assistant]:bg-secondary group-[.is-assistant]:text-foreground",
+				],
+				flat: [
+					"px-2 py-1",
+					"group-[.is-user]:max-w-[80%] group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+					"group-[.is-assistant]:text-foreground",
+				],
+			},
+		},
+		defaultVariants: {
+			variant: "contained",
+		},
+	},
+);
+
+export type MessageContentProps = HTMLAttributes<HTMLDivElement> &
+	VariantProps<typeof messageContentVariants>;
 
 export const MessageContent = ({
 	children,
 	className,
+	variant,
 	...props
 }: MessageContentProps) => (
 	<div
-		className={cn(
-			"flex flex-col gap-2 overflow-hidden rounded-xl px-4 py-3 text-foreground text-sm",
-			"group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground",
-			"group-[.is-assistant]:bg-transparent group-[.is-assistant]:text-foreground",
-			"is-user:dark",
-			className,
-		)}
+		className={cn(messageContentVariants({ variant, className }))}
 		{...props}
 	>
 		{children}

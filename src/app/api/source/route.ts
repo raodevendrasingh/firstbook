@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { exa, googleAI } from "@/ai/lib/services";
 import { db } from "@/db/drizzle";
 import { chat, embedding, type Resource, resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { exa, googleAI } from "@/lib/services";
 import type { ApiResponse } from "@/lib/types";
 import { createChunks } from "@/utils/createChunks";
 import { generateTitleFromResource } from "@/utils/generate-title-from-resource";
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 								);
 						})
 						.catch((error) => {
-							console.error("Failed to generate title:", error);
+							// silently ignore error
 						});
 				}
 
@@ -159,7 +159,6 @@ export async function POST(request: Request) {
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
-		console.error(errorMessage);
 		return Response.json(
 			{ success: false, error: errorMessage },
 			{ status: 500 },
