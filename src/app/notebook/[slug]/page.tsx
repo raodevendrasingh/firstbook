@@ -35,6 +35,9 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 		transport: new DefaultChatTransport({
 			api: "/api/chat",
 		}),
+		onError: (chatError) => {
+			toast.error(chatError.message);
+		},
 	});
 
 	const handleSubmit = (e: React.FormEvent) => {

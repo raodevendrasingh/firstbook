@@ -123,7 +123,7 @@ export const SourcePanel = ({
 				) : resources && resources.length > 0 ? (
 					resources.map((res) => (
 						<ul key={res.id} className="flex flex-col gap-1">
-							<li className=" py-1 px-2 rounded-sm bg-sky-50 flex items-center justify-between">
+							<li className="py-1 px-2 rounded-sm bg-sky-50 flex items-center justify-between gap-3">
 								<Checkbox
 									checked={selectedResources.some(
 										(selected) => selected.id === res.id,

@@ -1,12 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { google } from "@ai-sdk/google";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { and, eq } from "drizzle-orm";
+import {
+	convertToModelMessages,
+	stepCountIs,
+	streamText,
+	type UIMessage,
+} from "ai";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import systemPrompt from "@/ai/lib/prompt/system.md";
+import { searchResource } from "@/ai/tools/search-resource";
+import { webSearch } from "@/ai/tools/web-search";
 import { db } from "@/db/drizzle";
-import { chat, message } from "@/db/schema";
+import { chat, message, type Resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { generateTitleFromUserMessage } from "@/utils/generate-title-from-user-message";
+import { convertDbMessagesToUI } from "@/utils/convert-db-messages";
 
 export const maxDuration = 30;
 
@@ -16,6 +24,7 @@ type MessagePayload = {
 	webSearch: boolean;
 	id: string;
 	messages: UIMessage[];
+	selectedResources: Resource[];
 };
 
 export async function POST(req: Request) {
@@ -30,40 +39,13 @@ export async function POST(req: Request) {
 		);
 	}
 
-	const { messages, chatId, model }: MessagePayload = await req.json();
+	const payload: MessagePayload = await req.json();
 
-	const chatResult = await db
-		.select()
-		.from(chat)
-		.where(and(eq(chat.id, chatId), eq(chat.userId, session.user.id)))
-		.then((res) => res[0]);
-
-	if (!chatResult) {
-		return Response.json(
-			{ success: false, error: "Chat not found" },
-			{ status: 404 },
-		);
-	}
-
-	const chatTitle = chatResult.title;
-
-	if (messages.length === 1 && chatTitle.length === 0) {
-		generateTitleFromUserMessage({
-			message: messages[0],
-		})
-			.then(async (title) => {
-				await db.update(chat).set({ title }).where(eq(chat.id, chatId));
-			})
-			.catch((error) => {
-				// ignore error
-			});
-	}
-
-	const latestUserMessage = messages[messages.length - 1];
+	const latestUserMessage = payload.messages[payload.messages.length - 1];
 
 	await db.insert(message).values({
-		id: randomUUID(),
-		chatId,
+		id: latestUserMessage.id,
+		chatId: payload.chatId,
 		role: "user",
 		parts: latestUserMessage.parts,
 		attachments: [],
@@ -71,13 +53,18 @@ export async function POST(req: Request) {
 	});
 
 	const result = streamText({
-		model: google(model),
-		system: "You are a helpful assistant.",
-		messages: convertToModelMessages(messages),
+		model: google(payload.model),
+		system: systemPrompt,
+		stopWhen: stepCountIs(3),
+		tools: {
+			searchResource: searchResource(payload.selectedResources),
+			...(payload.webSearch && { webSearch }),
+		},
+		messages: convertToModelMessages(payload.messages),
 		onFinish: async (result) => {
 			await db.insert(message).values({
 				id: randomUUID(),
-				chatId: chatId,
+				chatId: payload.chatId,
 				role: "assistant",
 				parts: [{ type: "text", text: result.text }],
 				attachments: [],
@@ -113,18 +100,20 @@ export async function GET(req: Request) {
 			);
 		}
 
-		const title = notebook[0].title;
+		const notebookTitle = notebook[0].title;
 
 		const messages = await db
 			.select()
 			.from(message)
 			.where(eq(message.chatId, chatId));
 
+		const uiMessages = convertDbMessagesToUI(messages);
+
 		return Response.json(
 			{
 				success: true,
 				message: "Chat fetched",
-				data: { messages, title },
+				data: { messages: uiMessages, title: notebookTitle },
 			},
 			{ status: 200 },
 		);
