@@ -2,6 +2,7 @@
 
 import type { Session, User } from "better-auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { loadAvatar } from "@/lib/avatar-utils";
 import { cn } from "@/lib/utils";
+import { ThemeModeToggle } from "./theme-toggle";
 import { Skeleton } from "./ui/skeleton";
 
 type SessionType = {
@@ -31,6 +33,7 @@ interface UserDropdownProps {
 export function UserDropdown({ className }: UserDropdownProps) {
 	const [session, setSession] = useState<SessionType | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchSession = async () => {
@@ -48,6 +51,7 @@ export function UserDropdown({ className }: UserDropdownProps) {
 	const handleLogout = async () => {
 		setSessionLoading(true);
 		await authClient.signOut();
+		router.push("/");
 		setSession(null);
 		setSessionLoading(false);
 	};
@@ -71,8 +75,8 @@ export function UserDropdown({ className }: UserDropdownProps) {
 						</Avatar>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
-						className="w-52"
-						align="center"
+						className="w-52 rounded-2xl border border-primary/10"
+						align="end"
 						side="bottom"
 					>
 						<DropdownMenuLabel className="flex items-center gap-3">
@@ -90,18 +94,24 @@ export function UserDropdown({ className }: UserDropdownProps) {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>Settings</DropdownMenuItem>
+						<DropdownMenuGroup className="flex flex-col gap-1">
+							<DropdownMenuItem className="rounded-lg">
+								Settings
+							</DropdownMenuItem>
+							<ThemeModeToggle />
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem onClick={handleLogout}>
+						<DropdownMenuItem
+							onClick={handleLogout}
+							className="rounded-xl"
+						>
 							Log out
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			) : (
 				<Link href="/sign-in">
-					<Button>Sign In</Button>
+					<Button className="rounded-full">Sign In</Button>
 				</Link>
 			)}
 		</>

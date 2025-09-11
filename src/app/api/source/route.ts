@@ -218,3 +218,73 @@ export async function GET(request: Request) {
 		);
 	}
 }
+
+export async function DELETE(request: Request) {
+	try {
+		const session = await auth.api.getSession({
+			headers: await headers(),
+		});
+
+		if (!session) {
+			return Response.json(
+				{ success: false, error: "Unauthorized" },
+				{ status: 401 },
+			);
+		}
+
+		const { searchParams } = new URL(request.url);
+		const chatId = searchParams.get("chatId");
+		const id = searchParams.get("id");
+
+		if (!chatId || !id) {
+			return Response.json(
+				{
+					success: false,
+					error: "Chat ID and resource ID are required",
+				},
+				{ status: 400 },
+			);
+		}
+
+		// Verify the resource exists and belongs to the user
+		const resourceResult = await db
+			.select()
+			.from(resource)
+			.where(
+				and(
+					eq(resource.id, id),
+					eq(resource.chatId, chatId),
+					eq(resource.userId, session.user.id),
+				),
+			)
+			.then((res) => res[0]);
+
+		if (!resourceResult) {
+			return Response.json(
+				{
+					success: false,
+					error: "Resource not found or access denied",
+				},
+				{ status: 404 },
+			);
+		}
+
+		// Delete the resource (embeddings will be deleted automatically due to cascade)
+		await db.delete(resource).where(eq(resource.id, id));
+
+		return Response.json(
+			{
+				success: true,
+				message: "Resource deleted successfully",
+			} satisfies ApiResponse,
+			{ status: 200 },
+		);
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		return Response.json(
+			{ success: false, error: errorMessage },
+			{ status: 500 },
+		);
+	}
+}

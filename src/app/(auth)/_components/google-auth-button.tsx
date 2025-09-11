@@ -13,7 +13,7 @@ export const GoogleAuthButton = () => {
 
 	return (
 		<Button
-			className="w-full rounded-lg"
+			className="w-full rounded-full"
 			onClick={handleGoogleAuth}
 			type="button"
 		>

@@ -1,6 +1,12 @@
 "use client";
 
-import { ExternalLinkIcon, Link, Loader2, PlusIcon, XIcon } from "lucide-react";
+import {
+	ExternalLinkIcon,
+	Loader2,
+	PlusIcon,
+	ScrollText,
+	XIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Resource } from "@/db/schema";
@@ -96,23 +102,19 @@ export const SourcePanel = ({
 	return (
 		<div
 			className={cn(
-				"relative flex flex-col md:max-w-xs lg:max-w-md h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-md overflow-hidden",
+				"relative flex flex-col md:max-w-xs lg:max-w-md h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-xl overflow-hidden",
 				className,
 			)}
 		>
-			<div className="flex items-center justify-between gap-3 border-b px-3 py-1 bg-accent rounded-t-md">
-				<div className="font-medium">Sources</div>
+			<div className="flex flex-1 h-full min-h-0 flex-col gap-2 p-2 overflow-y-auto w-full">
 				<Button
-					variant="default"
-					size="sm"
-					className="hidden md:flex rounded-full"
+					variant="outline"
+					className="hidden md:flex rounded-full mb-2"
 					onClick={() => setSourceDialogOpen(true)}
 				>
 					<PlusIcon className="size-4" />
-					Add
+					Add Sources
 				</Button>
-			</div>
-			<div className="relative flex flex-1 h-full min-h-0 flex-col gap-2 p-3 overflow-y-auto w-full">
 				{loading ? (
 					<div className="flex items-center justify-center h-32 gap-2">
 						<div className="text-sm text-muted-foreground">
@@ -122,36 +124,40 @@ export const SourcePanel = ({
 					</div>
 				) : resources && resources.length > 0 ? (
 					resources.map((res) => (
-						<ul key={res.id} className="flex flex-col gap-1">
-							<li className="py-1 px-2 rounded-sm bg-sky-50 flex items-center justify-between gap-3">
-								<Checkbox
-									checked={selectedResources.some(
-										(selected) => selected.id === res.id,
-									)}
-									onCheckedChange={(checked) => {
-										if (checked) {
-											onSelectedResourcesChange([
-												...selectedResources,
-												res,
-											]);
-										} else {
-											onSelectedResourcesChange(
-												selectedResources.filter(
-													(selected) =>
-														selected.id !== res.id,
-												),
-											);
-										}
-									}}
-								/>
-								<span className="flex flex-col items-start">
-									<span className="text-sm font-medium line-clamp-1">
-										{res.title}
+						<ul key={res.id} className="flex flex-col gap-2">
+							<li className="py-1 px-3 rounded-xl bg-accent/80 flex items-center justify-between gap-3">
+								<div className="flex items-center gap-3">
+									<Checkbox
+										checked={selectedResources.some(
+											(selected) =>
+												selected.id === res.id,
+										)}
+										onCheckedChange={(checked) => {
+											if (checked) {
+												onSelectedResourcesChange([
+													...selectedResources,
+													res,
+												]);
+											} else {
+												onSelectedResourcesChange(
+													selectedResources.filter(
+														(selected) =>
+															selected.id !==
+															res.id,
+													),
+												);
+											}
+										}}
+									/>
+									<span className="flex flex-col items-start">
+										<span className="text-sm font-medium line-clamp-1">
+											{res.title}
+										</span>
+										<span className="text-xs text-muted-foreground line-clamp-1">
+											{res.source}
+										</span>
 									</span>
-									<span className="text-xs text-muted-foreground line-clamp-1">
-										{res.source}
-									</span>
-								</span>
+								</div>
 								<span className="flex items-center gap-0.5">
 									<Button
 										variant="ghost"
@@ -182,15 +188,20 @@ export const SourcePanel = ({
 						</ul>
 					))
 				) : (
-					<div className="flex flex-col mt-48 items-center justify-center p-2">
-						<Link size={48} className="text-muted-foreground" />
-						<span className="text-base text-center font-medium text-muted-foreground mb-2">
-							Saved sources will appear here
+					<div className="flex flex-col gap-3 mt-48 items-center justify-center p-2">
+						<ScrollText
+							size={48}
+							className="text-muted-foreground"
+						/>
+						<span className="flex flex-col gap-1">
+							<p className="text-base text-center font-medium text-muted-foreground">
+								Saved resources will appear here
+							</p>
+							<p className="text-sm text-center text-muted-foreground">
+								Click Add source button to add web sources to
+								your notebook
+							</p>
 						</span>
-						<p className="text-sm text-center text-muted-foreground">
-							Click Add source button to add web sources to your
-							notebook
-						</p>
 					</div>
 				)}
 				<Button

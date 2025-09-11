@@ -72,7 +72,7 @@ export default function SignUp() {
 		);
 	};
 	return (
-		<div className="flex min-h-svh flex-col items-center justify-center bg-accent/30 p-6 md:p-10">
+		<div className="flex min-h-svh flex-col items-center justify-center bg-background p-6 md:p-10">
 			<div className="flex w-full max-w-sm flex-col gap-2">
 				<Card className="rounded-2xl border-none bg-transparent shadow-none">
 					<CardHeader className="text-center">
@@ -123,6 +123,7 @@ export default function SignUp() {
 																		)}
 																		{...fieldProps}
 																		autoComplete="off"
+																		className="rounded-xl"
 																	/>
 																</div>
 															</FormControl>
@@ -133,7 +134,7 @@ export default function SignUp() {
 											),
 										)}
 									</div>
-									<Button>
+									<Button className="rounded-full">
 										{isPending ? (
 											<Loader2 className="animate-spin" />
 										) : (

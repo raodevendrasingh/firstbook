@@ -151,8 +151,8 @@ export const RecentNotebooks = () => {
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
 				{isLoading ? (
 					SKELETON_KEYS.map((key) => (
-						<div key={key} className="relative">
-							<div className="rounded-lg h-40 border p-4 relative shadow">
+						<div key={key} className="relative ">
+							<div className="rounded-2xl h-40 border p-4 relative shadow">
 								<div className="flex flex-col space-y-1">
 									<Skeleton className="h-5 w-full" />
 									<Skeleton className="h-5 w-3/4" />
@@ -198,9 +198,9 @@ export const RecentNotebooks = () => {
 						<div key={nb.id} className="relative group">
 							<Link
 								href={`/notebook/${nb.id}`}
-								className="rounded-lg"
+								className="rounded-2xl"
 							>
-								<Card className="rounded-lg h-40 pb-4">
+								<Card className="rounded-2xl h-40 pb-4">
 									<CardHeader className="flex-1">
 										<CardTitle>
 											{nb.title.length > 0
@@ -225,23 +225,27 @@ export const RecentNotebooks = () => {
 							</Link>
 							<div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
 								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
+									<DropdownMenuTrigger
+										asChild
+										className="cursor-pointer"
+									>
 										<Button
 											size="icon"
 											variant="secondary"
-											className="size-8 bg-transparent hover:bg-transparent shadow-none"
+											className="size-8 bg-transparent hover:bg-transparent shadow-none rounded-full"
 										>
 											<MoreVertical className="size-4" />
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent
 										align="end"
-										sideOffset={6}
+										className="bg-background rounded-xl gap-3"
 									>
 										<DropdownMenuItem
 											onClick={(e) =>
 												handleOpenInNewTab(nb.id, e)
 											}
+											className="rounded-lg"
 										>
 											<ExternalLink className="size-4" />
 											Open in new tab
@@ -252,6 +256,7 @@ export const RecentNotebooks = () => {
 												handleDeleteNotebook(nb.id, e)
 											}
 											disabled={deletingId === nb.id}
+											className="rounded-lg"
 										>
 											{deletingId === nb.id ? (
 												<Loader2 className="size-4 animate-spin" />

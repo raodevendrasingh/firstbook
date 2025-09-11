@@ -79,7 +79,7 @@ export function SourceDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
-				className="sm:max-w-2xl w-full max-h-[90vh] h-full flex flex-col"
+				className="sm:max-w-2xl w-full max-h-[90vh] h-full flex flex-col rounded-3xl"
 				onInteractOutside={(e) => e.preventDefault()}
 			>
 				<DialogHeader className="flex-shrink-0">
@@ -102,7 +102,7 @@ export function SourceDialog({
 										<FormControl className="flex-1">
 											<Textarea
 												placeholder="Paste URLs here, separated by commas or new lines"
-												className="h-full resize-none font-mono"
+												className="h-full resize-none font-mono rounded-2xl"
 												spellCheck={false}
 												{...field}
 											/>
@@ -132,7 +132,7 @@ export function SourceDialog({
 								<Button
 									type="submit"
 									disabled={isPending}
-									className="w-28"
+									className="w-28 rounded-full"
 								>
 									{isPending ? (
 										<Loader2 className="animate-spin" />

@@ -111,20 +111,20 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	}, [slug, setMessages, router, title.length]);
 
 	return (
-		<>
-			<nav className="fixed flex items-center h-14 w-full md:px-8 px-4 border-b z-50">
+		<div className="relative h-screen flex flex-col gap-2 overflow-hidden">
+			<nav className="fixed flex items-center h-14 w-full md:px-8 bg-background px-4 border-b border-border z-50">
 				<div className="flex w-full items-center justify-between mx-auto">
 					<div className="flex flex-row items-center gap-3">
 						<Button
 							onClick={() => router.back()}
 							variant="secondary"
 							size="icon"
-							className="rounded-full bg-zinc-200 border border-zinc-300"
+							className="rounded-full bg-accent border border-border size-8"
 						>
 							<ArrowLeftIcon className="size-4" />
 						</Button>
 
-						<span className="text-base line-clamp-1 md:text-xl font-medium">
+						<span className="text-base line-clamp-1 md:text-lg font-medium">
 							{title.length > 0 ? title : "Untitled Notebook"}
 						</span>
 					</div>
@@ -133,12 +133,25 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 			</nav>
 
 			{/* Mobile Tabs */}
-			<Tabs defaultValue="chat" className="pt-16 block md:hidden">
-				<TabsList className="mx-2">
-					<TabsTrigger value="chat">Chat</TabsTrigger>
-					<TabsTrigger value="sources">Sources</TabsTrigger>
+			<Tabs
+				defaultValue="chat"
+				className="pt-16 block md:hidden bg-accent/30 w-full mx-auto"
+			>
+				<TabsList className="flex justify-center items-center mx-auto bg-background w-[95%] sm:w-[98%] border">
+					<TabsTrigger
+						value="chat"
+						className="w-1/2 data-[state=active]:bg-secondary"
+					>
+						Chat
+					</TabsTrigger>
+					<TabsTrigger
+						value="sources"
+						className="w-1/2 data-[state=active]:bg-secondary"
+					>
+						Sources
+					</TabsTrigger>
 				</TabsList>
-				<div className="flex flex-col h-[calc(100vh-6.7rem)]">
+				<div className="flex flex-col h-[calc(100vh-6.3rem)]">
 					<TabsContent value="chat" className="p-2">
 						<ChatContainer
 							className="block md:hidden h-[calc(100vh-7.3rem)] "
@@ -172,7 +185,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 			</Tabs>
 
 			{/* Desktop Layout */}
-			<div className="w-full mx-auto items-center justify-center md:flex hidden flex-row gap-2 p-2 pt-16 relative">
+			<div className="w-full mx-auto items-center justify-center md:flex hidden flex-row gap-2 p-2 pt-16 relative bg-accent/30">
 				<ChatContainer
 					className="hidden md:flex flex-col h-[calc(100vh-4.5rem)]"
 					title="Chat"
@@ -206,6 +219,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 				slug={slug}
 				onSourcesAdded={() => setRefreshSources((prev) => prev + 1)}
 			/>
-		</>
+		</div>
 	);
 }

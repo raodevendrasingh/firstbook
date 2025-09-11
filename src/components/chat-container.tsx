@@ -75,16 +75,11 @@ export function ChatContainer({
 	return (
 		<div
 			className={cn(
-				"w-full mx-auto relative size-full border border-border rounded-md",
+				"w-full mx-auto relative size-full border border-border rounded-xl bg-background",
 				className,
 			)}
 		>
-			<div className="flex items-center justify-between gap-3 border-b px-3 py-1 md:py-2 bg-accent rounded-t-md">
-				<div className="flex items-center justify-start gap-3">
-					<div className="font-medium">{title}</div>
-				</div>
-			</div>
-			<div className="flex flex-col h-[calc(100vh-9.3rem)] md:h-[calc(100vh-7rem)] p-3">
+			<div className="flex flex-col h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.7rem)] p-3">
 				<Conversation className="h-full">
 					<ConversationContent>
 						{messages.length === 0 ? (
@@ -212,14 +207,15 @@ export function ChatContainer({
 				<PromptInput
 					onSubmit={handleSubmit}
 					className={cn(
-						"mt-4",
-						!hasSources && "opacity-50 pointer-events-none",
+						"mt-4 rounded-3xl border-2 border-primary/20 shadow-3xl p-1",
+						!hasSources && "opacity-70 pointer-events-none",
 					)}
 				>
 					<PromptInputTextarea
 						onChange={(e) => setInput(e.target.value)}
 						value={input}
 						disabled={!hasSources}
+						className="border"
 						placeholder={
 							hasSources
 								? "What would you like to know?"
@@ -229,9 +225,10 @@ export function ChatContainer({
 					<PromptInputToolbar>
 						<PromptInputTools>
 							<PromptInputButton
-								variant={webSearch ? "default" : "ghost"}
+								variant={webSearch ? "default" : "outline"}
 								onClick={() => setWebSearch(!webSearch)}
 								disabled={!hasSources}
+								className="rounded-full border"
 							>
 								<GlobeIcon size={16} />
 								<span>Search</span>
@@ -241,12 +238,13 @@ export function ChatContainer({
 								value={model}
 								disabled={!hasSources}
 							>
-								<PromptInputModelSelectTrigger>
+								<PromptInputModelSelectTrigger className="rounded-full">
 									<PromptInputModelSelectValue />
 								</PromptInputModelSelectTrigger>
-								<PromptInputModelSelectContent>
+								<PromptInputModelSelectContent className="rounded-2xl">
 									{models.map((m) => (
 										<PromptInputModelSelectItem
+											className="rounded-xl"
 											key={m.value}
 											value={m.value}
 										>
@@ -257,6 +255,7 @@ export function ChatContainer({
 							</PromptInputModelSelect>
 						</PromptInputTools>
 						<PromptInputSubmit
+							className="rounded-full"
 							disabled={!input || !hasSources}
 							status={status as ChatStatus}
 						/>
