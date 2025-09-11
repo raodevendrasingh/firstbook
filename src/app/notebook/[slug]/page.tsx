@@ -6,13 +6,14 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { models } from "@/ai/lib/model";
 import { ChatContainer } from "@/components/chat-container";
 import { SourceDialog } from "@/components/source-dialog";
 import { SourcePanel } from "@/components/source-panel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
-import { models } from "@/lib/model";
+import type { Resource } from "@/db/schema";
 import type { FetchChatResponse } from "@/lib/types";
 
 interface NotebookPageProps {
@@ -28,6 +29,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const [title, setTitle] = useState<string>("");
 	const [sourceDialogOpen, setSourceDialogOpen] = useState<boolean>(false);
 	const [refreshSources, setRefreshSources] = useState<number>(0);
+	const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
 
 	const { messages, sendMessage, status, regenerate, setMessages } = useChat({
 		transport: new DefaultChatTransport({
@@ -45,11 +47,16 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 						model: model,
 						chatId: slug,
 						webSearch: webSearch,
+						selectedResources: selectedResources,
 					},
 				},
 			);
 			setInput("");
 		}
+	};
+
+	const handleSelectedResourcesChange = (resources: Resource[]) => {
+		setSelectedResources(resources);
 	};
 
 	useEffect(() => {
@@ -102,7 +109,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 
 	return (
 		<>
-			<nav className="fixed flex items-center h-14 w-full md:px-8 px-4 bg-primary-foreground z-50">
+			<nav className="fixed flex items-center h-14 w-full md:px-8 px-4 border-b z-50">
 				<div className="flex w-full items-center justify-between mx-auto">
 					<div className="flex flex-row items-center gap-3">
 						<Button
@@ -144,6 +151,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							model={model}
 							setModel={setModel}
 							models={models}
+							hasSources={selectedResources.length > 0}
 						/>
 					</TabsContent>
 					<TabsContent value="sources" className="p-2">
@@ -151,6 +159,10 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							setSourceDialogOpen={setSourceDialogOpen}
 							className="block md:hidden"
 							chatId={slug}
+							selectedResources={selectedResources}
+							onSelectedResourcesChange={
+								handleSelectedResourcesChange
+							}
 						/>
 					</TabsContent>
 				</div>
@@ -172,6 +184,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					model={model}
 					setModel={setModel}
 					models={models}
+					hasSources={selectedResources.length > 0}
 				/>
 				<SourcePanel
 					className="hidden md:flex"
@@ -179,6 +192,8 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					chatId={slug}
 					refreshTrigger={refreshSources}
 					onNoSourcesDetected={() => setSourceDialogOpen(true)}
+					selectedResources={selectedResources}
+					onSelectedResourcesChange={handleSelectedResourcesChange}
 				/>
 			</div>
 

@@ -1,12 +1,7 @@
 "use client";
 
 import type { ChatStatus, UIMessage } from "ai";
-import {
-	CopyIcon,
-	GlobeIcon,
-	MessageSquare,
-	RefreshCcwIcon,
-} from "lucide-react";
+import { CopyIcon, GlobeIcon, Link, RefreshCcwIcon } from "lucide-react";
 import { Fragment } from "react";
 import { Action, Actions } from "@/components/ai-elements/actions";
 import {
@@ -58,6 +53,7 @@ export type ChatContainerProps = {
 	model: string;
 	setModel: (value: string) => void;
 	models: { name: string; value: string }[];
+	hasSources?: boolean;
 };
 
 export function ChatContainer({
@@ -74,6 +70,7 @@ export function ChatContainer({
 	model,
 	setModel,
 	models,
+	hasSources = true,
 }: ChatContainerProps) {
 	return (
 		<div
@@ -92,9 +89,9 @@ export function ChatContainer({
 					<ConversationContent>
 						{messages.length === 0 ? (
 							<ConversationEmptyState
-								icon={<MessageSquare className="size-12" />}
-								title="No messages yet"
-								description="Start a conversation to see messages here"
+								className="mt-28"
+								icon={<Link className="size-6" />}
+								title="Add a source to get started"
 							/>
 						) : (
 							messages.map((message) => (
@@ -212,16 +209,29 @@ export function ChatContainer({
 					<ConversationScrollButton />
 				</Conversation>
 
-				<PromptInput onSubmit={handleSubmit} className="mt-4">
+				<PromptInput
+					onSubmit={handleSubmit}
+					className={cn(
+						"mt-4",
+						!hasSources && "opacity-50 pointer-events-none",
+					)}
+				>
 					<PromptInputTextarea
 						onChange={(e) => setInput(e.target.value)}
 						value={input}
+						disabled={!hasSources}
+						placeholder={
+							hasSources
+								? "What would you like to know?"
+								: "Add sources to start chatting"
+						}
 					/>
 					<PromptInputToolbar>
 						<PromptInputTools>
 							<PromptInputButton
 								variant={webSearch ? "default" : "ghost"}
 								onClick={() => setWebSearch(!webSearch)}
+								disabled={!hasSources}
 							>
 								<GlobeIcon size={16} />
 								<span>Search</span>
@@ -229,6 +239,7 @@ export function ChatContainer({
 							<PromptInputModelSelect
 								onValueChange={(value) => setModel(value)}
 								value={model}
+								disabled={!hasSources}
 							>
 								<PromptInputModelSelectTrigger>
 									<PromptInputModelSelectValue />
@@ -246,7 +257,7 @@ export function ChatContainer({
 							</PromptInputModelSelect>
 						</PromptInputTools>
 						<PromptInputSubmit
-							disabled={!input}
+							disabled={!input || !hasSources}
 							status={status as ChatStatus}
 						/>
 					</PromptInputToolbar>

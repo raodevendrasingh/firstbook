@@ -1,12 +1,13 @@
 "use client";
 
-import { PlusIcon } from "lucide-react";
+import { ExternalLinkIcon, Link, Loader2, PlusIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Resource } from "@/db/schema";
 import type { ApiResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
 
 type sourcePanelProps = {
 	setSourceDialogOpen: (open: boolean) => void;
@@ -14,6 +15,8 @@ type sourcePanelProps = {
 	chatId: string;
 	refreshTrigger?: number;
 	onNoSourcesDetected?: () => void;
+	selectedResources: Resource[];
+	onSelectedResourcesChange: (resources: Resource[]) => void;
 };
 
 export const SourcePanel = ({
@@ -22,6 +25,8 @@ export const SourcePanel = ({
 	chatId,
 	refreshTrigger,
 	onNoSourcesDetected,
+	selectedResources,
+	onSelectedResourcesChange,
 }: sourcePanelProps) => {
 	const [resources, setResources] = useState<Resource[] | undefined>();
 	const [loading, setLoading] = useState(false);
@@ -43,6 +48,8 @@ export const SourcePanel = ({
 				setResources(sources);
 				setHasFetched(true);
 
+				onSelectedResourcesChange(sources);
+
 				if (sources.length === 0 && onNoSourcesDetected) {
 					setTimeout(() => {
 						onNoSourcesDetected();
@@ -56,7 +63,7 @@ export const SourcePanel = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [chatId, onNoSourcesDetected]);
+	}, [chatId, onNoSourcesDetected, onSelectedResourcesChange]);
 
 	useEffect(() => {
 		if (chatId && !hasFetched && !loading) {
@@ -69,6 +76,22 @@ export const SourcePanel = ({
 			setHasFetched(false);
 		}
 	}, [refreshTrigger]);
+
+	const handleDelete = useCallback(
+		async (id: string) => {
+			if (!chatId) return;
+			const res = await fetch(`/api/source?chatId=${chatId}&id=${id}`, {
+				method: "DELETE",
+			});
+			if (res.ok) {
+				fetchSources();
+				toast.success("Resource deleted successfully");
+			} else {
+				toast.error("Failed to delete resource");
+			}
+		},
+		[chatId, fetchSources],
+	);
 
 	return (
 		<div
@@ -91,24 +114,83 @@ export const SourcePanel = ({
 			</div>
 			<div className="relative flex flex-1 h-full min-h-0 flex-col gap-2 p-3 overflow-y-auto w-full">
 				{loading ? (
-					<div className="flex items-center justify-center h-32">
+					<div className="flex items-center justify-center h-32 gap-2">
 						<div className="text-sm text-muted-foreground">
-							Loading sources...
+							Loading sources
 						</div>
+						<Loader2 className="animate-spin size-4" />
 					</div>
 				) : resources && resources.length > 0 ? (
 					resources.map((res) => (
 						<ul key={res.id} className="flex flex-col gap-1">
-							<li className="text-sm font-medium p-1 rounded-md hover:bg-accent">
-								{res.title}
+							<li className=" py-1 px-2 rounded-sm bg-sky-50 flex items-center justify-between">
+								<Checkbox
+									checked={selectedResources.some(
+										(selected) => selected.id === res.id,
+									)}
+									onCheckedChange={(checked) => {
+										if (checked) {
+											onSelectedResourcesChange([
+												...selectedResources,
+												res,
+											]);
+										} else {
+											onSelectedResourcesChange(
+												selectedResources.filter(
+													(selected) =>
+														selected.id !== res.id,
+												),
+											);
+										}
+									}}
+								/>
+								<span className="flex flex-col items-start">
+									<span className="text-sm font-medium line-clamp-1">
+										{res.title}
+									</span>
+									<span className="text-xs text-muted-foreground line-clamp-1">
+										{res.source}
+									</span>
+								</span>
+								<span className="flex items-center gap-0.5">
+									<Button
+										variant="ghost"
+										size="icon"
+										className="cursor-pointer rounded-full"
+										onClick={() => {
+											handleDelete(res.id);
+										}}
+									>
+										<XIcon />
+									</Button>
+
+									<Button
+										variant="ghost"
+										size="icon"
+										className="cursor-pointer rounded-full"
+										onClick={() => {
+											window.open(
+												res.source ?? "",
+												"_blank",
+											);
+										}}
+									>
+										<ExternalLinkIcon />
+									</Button>
+								</span>
 							</li>
 						</ul>
 					))
 				) : (
-					<div className="flex items-center justify-center p-2 border-[2px] border-dashed rounded-md">
-						<div className="text-sm text-muted-foreground">
-							No sources added yet
-						</div>
+					<div className="flex flex-col mt-48 items-center justify-center p-2">
+						<Link size={48} className="text-muted-foreground" />
+						<span className="text-base text-center font-medium text-muted-foreground mb-2">
+							Saved sources will appear here
+						</span>
+						<p className="text-sm text-center text-muted-foreground">
+							Click Add source button to add web sources to your
+							notebook
+						</p>
 					</div>
 				)}
 				<Button
