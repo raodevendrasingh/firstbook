@@ -6,7 +6,6 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { models } from "@/ai/lib/model";
 import { ChatContainer } from "@/components/chat-container";
 import { SourceDialog } from "@/components/source-dialog";
 import { SourcePanel } from "@/components/source-panel";
@@ -14,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
 import type { Resource } from "@/db/schema";
+import { useModelSelection } from "@/hooks/use-model-selection";
 import type { FetchChatResponse } from "@/lib/types";
 
 interface NotebookPageProps {
@@ -24,7 +24,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const { slug } = use(params);
 	const router = useRouter();
 	const [input, setInput] = useState("");
-	const [model, setModel] = useState<string>(models[0].value);
 	const [webSearch, setWebSearch] = useState<boolean>(false);
 	const [title, setTitle] = useState<string>("");
 	const [sourceDialogOpen, setSourceDialogOpen] = useState<boolean>(false);
@@ -40,6 +39,8 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 		},
 	});
 
+	const { selectedModel, selectModel, allModels } = useModelSelection();
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (input.trim()) {
@@ -47,7 +48,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 				{ text: input },
 				{
 					body: {
-						model: model,
+						selectedModel: selectedModel,
 						chatId: slug,
 						webSearch: webSearch,
 						selectedResources: selectedResources,
@@ -164,9 +165,9 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							handleSubmit={handleSubmit}
 							webSearch={webSearch}
 							setWebSearch={setWebSearch}
-							model={model}
-							setModel={setModel}
-							models={models}
+							model={selectedModel}
+							setModel={selectModel}
+							models={allModels}
 							hasSources={selectedResources.length > 0}
 						/>
 					</TabsContent>
@@ -197,9 +198,9 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					handleSubmit={handleSubmit}
 					webSearch={webSearch}
 					setWebSearch={setWebSearch}
-					model={model}
-					setModel={setModel}
-					models={models}
+					model={selectedModel}
+					setModel={selectModel}
+					models={allModels}
 					hasSources={selectedResources.length > 0}
 				/>
 				<SourcePanel

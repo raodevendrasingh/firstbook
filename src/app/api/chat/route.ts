@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { google } from "@ai-sdk/google";
 import {
 	convertToModelMessages,
 	stepCountIs,
@@ -15,11 +14,12 @@ import { db } from "@/db/drizzle";
 import { chat, message, type Resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { convertDbMessagesToUI } from "@/utils/convert-db-messages";
+import { resolveModel } from "@/utils/resolve-models";
 
 export const maxDuration = 30;
 
 type MessagePayload = {
-	model: string;
+	selectedModel: string;
 	chatId: string;
 	webSearch: boolean;
 	id: string;
@@ -52,8 +52,10 @@ export async function POST(req: Request) {
 		createdAt: new Date(),
 	});
 
+	const model = resolveModel(payload.selectedModel);
+
 	const result = streamText({
-		model: google(payload.model),
+		model,
 		system: systemPrompt,
 		stopWhen: stepCountIs(3),
 		tools: {

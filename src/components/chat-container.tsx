@@ -15,11 +15,6 @@ import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
 	PromptInput,
 	PromptInputButton,
-	PromptInputModelSelect,
-	PromptInputModelSelectContent,
-	PromptInputModelSelectItem,
-	PromptInputModelSelectTrigger,
-	PromptInputModelSelectValue,
 	PromptInputSubmit,
 	PromptInputTextarea,
 	PromptInputToolbar,
@@ -36,6 +31,7 @@ import {
 	SourcesContent,
 	SourcesTrigger,
 } from "@/components/ai-elements/sources";
+import { ModelCombobox } from "@/components/model-combobox";
 import { cn } from "@/lib/utils";
 import { Response } from "./ai-elements/response";
 
@@ -52,7 +48,7 @@ export type ChatContainerProps = {
 	setWebSearch: (value: boolean) => void;
 	model: string;
 	setModel: (value: string) => void;
-	models: { name: string; value: string }[];
+	models: string[];
 	hasSources?: boolean;
 };
 
@@ -233,26 +229,13 @@ export function ChatContainer({
 								<GlobeIcon size={16} />
 								<span>Search</span>
 							</PromptInputButton>
-							<PromptInputModelSelect
-								onValueChange={(value) => setModel(value)}
-								value={model}
+							<ModelCombobox
+								models={models}
+								selectedModel={model}
+								onModelChange={setModel}
 								disabled={!hasSources}
-							>
-								<PromptInputModelSelectTrigger className="rounded-full">
-									<PromptInputModelSelectValue />
-								</PromptInputModelSelectTrigger>
-								<PromptInputModelSelectContent className="rounded-2xl">
-									{models.map((m) => (
-										<PromptInputModelSelectItem
-											className="rounded-xl"
-											key={m.value}
-											value={m.value}
-										>
-											{m.name}
-										</PromptInputModelSelectItem>
-									))}
-								</PromptInputModelSelectContent>
-							</PromptInputModelSelect>
+								className="border"
+							/>
 						</PromptInputTools>
 						<PromptInputSubmit
 							className="rounded-full"
