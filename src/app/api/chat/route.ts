@@ -13,10 +13,13 @@ import { webSearch } from "@/ai/tools/web-search";
 import { db } from "@/db/drizzle";
 import { chat, message, type Resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import type { ApiResponse } from "@/lib/types";
 import { convertDbMessagesToUI } from "@/utils/convert-db-messages";
 import { resolveModel } from "@/utils/resolve-models";
 
 export const maxDuration = 30;
+
+export const revalidate = 60;
 
 type MessagePayload = {
 	selectedModel: string;
@@ -34,7 +37,7 @@ export async function POST(req: Request) {
 
 	if (!session) {
 		return Response.json(
-			{ success: false, error: "Unauthorized" },
+			{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 			{ status: 401 },
 		);
 	}
@@ -85,7 +88,10 @@ export async function GET(req: Request) {
 
 		if (!chatId) {
 			return Response.json(
-				{ success: false, error: "Chat ID is required" },
+				{
+					success: false,
+					error: "Chat ID is required",
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
@@ -97,7 +103,10 @@ export async function GET(req: Request) {
 
 		if (!notebook) {
 			return Response.json(
-				{ success: false, error: "Chat not found" },
+				{
+					success: false,
+					error: "Chat not found",
+				} satisfies ApiResponse,
 				{ status: 404 },
 			);
 		}
@@ -116,14 +125,14 @@ export async function GET(req: Request) {
 				success: true,
 				message: "Chat fetched",
 				data: { messages: uiMessages, title: notebookTitle },
-			},
+			} satisfies ApiResponse<{ messages: UIMessage[]; title: string }>,
 			{ status: 200 },
 		);
 	} catch (error) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}

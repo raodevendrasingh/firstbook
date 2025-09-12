@@ -4,6 +4,9 @@ import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, message, resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import type { ApiResponse, notebooksWithCounts } from "@/lib/types";
+
+export const revalidate = 60;
 
 export async function POST() {
 	try {
@@ -13,7 +16,7 @@ export async function POST() {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -34,7 +37,7 @@ export async function POST() {
 				data: {
 					notebookId: notebookId,
 				},
-			},
+			} satisfies ApiResponse<{ notebookId: string }>,
 			{
 				status: 200,
 			},
@@ -43,7 +46,7 @@ export async function POST() {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}
@@ -57,7 +60,7 @@ export async function GET() {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -102,7 +105,7 @@ export async function GET() {
 				data: {
 					notebooks: notebooksWithCounts,
 				},
-			},
+			} satisfies ApiResponse<{ notebooks: notebooksWithCounts[] }>,
 			{
 				status: 200,
 			},
@@ -111,7 +114,7 @@ export async function GET() {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}
@@ -125,7 +128,7 @@ export async function DELETE(req: Request) {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -135,7 +138,10 @@ export async function DELETE(req: Request) {
 
 		if (!notebookId) {
 			return Response.json(
-				{ success: false, error: "Notebook ID is required" },
+				{
+					success: false,
+					error: "Notebook ID is required",
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
@@ -149,7 +155,10 @@ export async function DELETE(req: Request) {
 
 		if (!notebook.length) {
 			return Response.json(
-				{ success: false, error: "Notebook not found" },
+				{
+					success: false,
+					error: "Notebook not found",
+				} satisfies ApiResponse,
 				{ status: 404 },
 			);
 		}
@@ -164,7 +173,7 @@ export async function DELETE(req: Request) {
 			{
 				success: true,
 				message: "Notebook deleted successfully",
-			},
+			} satisfies ApiResponse,
 			{
 				status: 200,
 			},
@@ -173,7 +182,7 @@ export async function DELETE(req: Request) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}

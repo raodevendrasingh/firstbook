@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import type { Resource } from "@/db/schema";
 
 export type notebooksWithCounts = {
 	resourceCount: number;
@@ -16,43 +17,18 @@ export type ApiResponse<T = undefined> =
 	  }
 	| { success: false; error: string };
 
-export type CreateNotebookResponse =
-	| {
-			success: true;
-			message: string;
-			data: {
-				notebookId: string;
-			};
-	  }
-	| { success: false; error: string };
+export type CreateNotebookResponse = ApiResponse<{ notebookId: string }>;
 
-export type FetchNotebooksResponse =
-	| {
-			success: true;
-			message: string;
-			data: {
-				notebooks: notebooksWithCounts[];
-			};
-	  }
-	| { success: false; error: string };
+export type FetchNotebooksResponse = ApiResponse<{
+	notebooks: notebooksWithCounts[];
+}>;
 
-export type FetchChatResponse =
-	| {
-			success: true;
-			message: string;
-			data: {
-				messages: UIMessage[];
-				title: string;
-			};
-	  }
-	| { success: false; error: string };
+export type FetchChatResponse = ApiResponse<{
+	messages: UIMessage[];
+	title: string;
+}>;
 
-export type DeleteNotebookResponse =
-	| {
-			success: true;
-			message: string;
-	  }
-	| { success: false; error: string };
+export type SourceFetchResponse = ApiResponse<{ resource: Resource[] }>;
 
 export type ExaSearchResponse = {
 	requestId: string;

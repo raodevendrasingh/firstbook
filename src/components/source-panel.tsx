@@ -10,10 +10,13 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Resource } from "@/db/schema";
-import type { ApiResponse } from "@/lib/types";
+import type { SourceFetchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
+
+const sourceCache = new Map<string, { data: Resource[]; timestamp: number }>();
+const CACHE_TTL = 60000;
 
 type sourcePanelProps = {
 	setSourceDialogOpen: (open: boolean) => void;
@@ -41,16 +44,39 @@ export const SourcePanel = ({
 	const fetchSources = useCallback(async () => {
 		if (!chatId) return;
 
+		const url = `/api/source?chatId=${chatId}`;
+		const now = Date.now();
+		const cached = sourceCache.get(url);
+
+		if (cached && now - cached.timestamp < CACHE_TTL) {
+			const sources = cached.data;
+			setResources(sources);
+			setHasFetched(true);
+			onSelectedResourcesChange(sources);
+
+			if (sources.length === 0 && onNoSourcesDetected) {
+				setTimeout(() => {
+					onNoSourcesDetected();
+				}, 500);
+			}
+			return;
+		}
+
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/source?chatId=${chatId}`, {
+			const res = await fetch(url, {
 				method: "GET",
 			});
-			const result: ApiResponse<{ resource: Resource[] }> =
-				await res.json();
+			const result: SourceFetchResponse = await res.json();
 
 			if (result.success) {
 				const sources = result.data?.resource || [];
+
+				sourceCache.set(url, {
+					data: sources,
+					timestamp: now,
+				});
+
 				setResources(sources);
 				setHasFetched(true);
 
@@ -90,6 +116,7 @@ export const SourcePanel = ({
 				method: "DELETE",
 			});
 			if (res.ok) {
+				sourceCache.delete(`/api/source?chatId=${chatId}`);
 				fetchSources();
 				toast.success("Resource deleted successfully");
 			} else {

@@ -16,6 +16,12 @@ import type { Resource } from "@/db/schema";
 import { useModelSelection } from "@/hooks/use-model-selection";
 import type { FetchChatResponse } from "@/lib/types";
 
+const chatCache = new Map<
+	string,
+	{ data: FetchChatResponse; timestamp: number }
+>();
+const CACHE_TTL = 60000;
+
 interface NotebookPageProps {
 	params: Promise<{ slug: string }>;
 }
@@ -67,8 +73,28 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 		let isCancelled = false;
 		let intervalId: NodeJS.Timeout | null = null;
 
-		const fetchOnce = () =>
-			fetch(`/api/chat?chatId=${slug}`)
+		const fetchOnce = () => {
+			const url = `/api/chat?chatId=${slug}`;
+			const now = Date.now();
+			const cached = chatCache.get(url);
+
+			// Check if we have valid cached data
+			if (cached && now - cached.timestamp < CACHE_TTL) {
+				const result = cached.data;
+				if (!result.success) {
+					toast.error("Chat not found!");
+					router.push("/notebooks");
+					return;
+				}
+				if (result.data) {
+					setMessages(result.data.messages);
+					setTitle(result.data.title);
+				}
+				return;
+			}
+
+			// Fetch fresh data
+			fetch(url)
 				.then((res) => res.json())
 				.then((result: FetchChatResponse) => {
 					if (!result.success) {
@@ -76,11 +102,21 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 						router.push("/notebooks");
 						return;
 					}
-					setMessages(result.data.messages);
-					setTitle(result.data.title);
+
+					// Cache the result
+					chatCache.set(url, {
+						data: result,
+						timestamp: now,
+					});
+
+					if (result.data) {
+						setMessages(result.data.messages);
+						setTitle(result.data.title);
+					}
 
 					if (
 						!isCancelled &&
+						result.data &&
 						result.data.title.length === 0 &&
 						title.length === 0
 					) {
@@ -91,6 +127,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 									if (
 										!isCancelled &&
 										poll.success &&
+										poll.data &&
 										poll.data.title.length > 0
 									) {
 										setTitle(poll.data.title);
@@ -102,6 +139,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 						}, 1000);
 					}
 				});
+		};
 
 		fetchOnce();
 

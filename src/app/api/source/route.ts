@@ -11,6 +11,8 @@ import { generateTitleFromResource } from "@/utils/generate-title-from-resource"
 import { normalizeVector } from "@/utils/normalize-vector";
 import { sanitizeText } from "@/utils/sanitize-text";
 
+export const revalidate = 60;
+
 type SourcePayload = {
 	urls: string[];
 	chatId: string;
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -33,7 +35,10 @@ export async function POST(request: Request) {
 
 		if (!urls || !Array.isArray(urls) || urls.length === 0) {
 			return Response.json(
-				{ success: false, error: "URLs array is required" },
+				{
+					success: false,
+					error: "URLs array is required",
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
@@ -49,7 +54,10 @@ export async function POST(request: Request) {
 
 		if (uniqueUrls.length === 0) {
 			return Response.json(
-				{ success: false, error: "No valid URLs provided" },
+				{
+					success: false,
+					error: "No valid URLs provided",
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
@@ -62,7 +70,10 @@ export async function POST(request: Request) {
 
 		if (!chatResult) {
 			return Response.json(
-				{ success: false, error: "Chat not found" },
+				{
+					success: false,
+					error: "Chat not found",
+				} satisfies ApiResponse,
 				{ status: 404 },
 			);
 		}
@@ -160,7 +171,7 @@ export async function POST(request: Request) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}
@@ -174,7 +185,7 @@ export async function GET(request: Request) {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -184,7 +195,10 @@ export async function GET(request: Request) {
 
 		if (!chatId) {
 			return Response.json(
-				{ success: false, error: "Chat ID is required" },
+				{
+					success: false,
+					error: "Chat ID is required",
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
@@ -227,7 +241,7 @@ export async function DELETE(request: Request) {
 
 		if (!session) {
 			return Response.json(
-				{ success: false, error: "Unauthorized" },
+				{ success: false, error: "Unauthorized" } satisfies ApiResponse,
 				{ status: 401 },
 			);
 		}
@@ -241,12 +255,11 @@ export async function DELETE(request: Request) {
 				{
 					success: false,
 					error: "Chat ID and resource ID are required",
-				},
+				} satisfies ApiResponse,
 				{ status: 400 },
 			);
 		}
 
-		// Verify the resource exists and belongs to the user
 		const resourceResult = await db
 			.select()
 			.from(resource)
@@ -264,12 +277,11 @@ export async function DELETE(request: Request) {
 				{
 					success: false,
 					error: "Resource not found or access denied",
-				},
+				} satisfies ApiResponse,
 				{ status: 404 },
 			);
 		}
 
-		// Delete the resource (embeddings will be deleted automatically due to cascade)
 		await db.delete(resource).where(eq(resource.id, id));
 
 		return Response.json(
@@ -283,7 +295,7 @@ export async function DELETE(request: Request) {
 		const errorMessage =
 			error instanceof Error ? error.message : "Unknown error";
 		return Response.json(
-			{ success: false, error: errorMessage },
+			{ success: false, error: errorMessage } satisfies ApiResponse,
 			{ status: 500 },
 		);
 	}

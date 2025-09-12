@@ -22,13 +22,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
 	CreateNotebookResponse,
-	DeleteNotebookResponse,
 	FetchNotebooksResponse,
 	notebooksWithCounts,
 } from "@/lib/types";
 import { Button } from "./ui/button";
 
 const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
+
+const cache = new Map<
+	string,
+	{ data: notebooksWithCounts[]; timestamp: number }
+>();
+const CACHE_TTL = 60000;
 
 export const RecentNotebooks = () => {
 	const router = useRouter();
@@ -46,7 +51,7 @@ export const RecentNotebooks = () => {
 			const result: CreateNotebookResponse = await response.json();
 
 			if (result.success) {
-				router.push(`/notebook/${result.data.notebookId}`);
+				router.push(`/notebook/${result.data?.notebookId}`);
 			} else {
 				toast.error(result.error);
 			}
@@ -83,21 +88,18 @@ export const RecentNotebooks = () => {
 
 		try {
 			setDeletingId(notebookId);
-			const response = await fetch(
-				`/api/notebook?notebookId=${notebookId}`,
-				{
-					method: "DELETE",
-				},
-			);
-			const result: DeleteNotebookResponse = await response.json();
+			const res = await fetch(`/api/notebook?notebookId=${notebookId}`, {
+				method: "DELETE",
+			});
 
-			if (result.success) {
+			if (res.ok) {
 				setNotebooks((prev) =>
 					prev.filter((nb) => nb.id !== notebookId),
 				);
+				cache.delete("/api/notebook");
 				toast.success("Notebook deleted successfully");
 			} else {
-				toast.error(result.error);
+				toast.error("Failed to delete notebook");
 			}
 		} catch {
 			toast.error("Failed to delete notebook");
@@ -108,8 +110,18 @@ export const RecentNotebooks = () => {
 
 	useEffect(() => {
 		const fetchNotebooks = async () => {
+			const url = "/api/notebook";
+			const now = Date.now();
+			const cached = cache.get(url);
+
+			if (cached && now - cached.timestamp < CACHE_TTL) {
+				setNotebooks(cached.data);
+				setIsLoading(false);
+				return;
+			}
+
 			try {
-				const response = await fetch("/api/notebook", {
+				const response = await fetch(url, {
 					method: "GET",
 					headers: {
 						"Content-Type": "application/json",
@@ -118,7 +130,16 @@ export const RecentNotebooks = () => {
 				const result: FetchNotebooksResponse = await response.json();
 
 				if (result.success) {
-					setNotebooks(result.data.notebooks);
+					if (result.data) {
+						// Cache the result
+						cache.set(url, {
+							data: result.data.notebooks,
+							timestamp: now,
+						});
+						setNotebooks(result.data.notebooks);
+					} else {
+						toast.error("No data received");
+					}
 				} else {
 					toast.error(result.error);
 				}
