@@ -36,6 +36,13 @@
 			"when": 1757353219300,
 			"tag": "0004_dazzling_secret_warriors",
 			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1757868882242,
+			"tag": "0005_next_naoko",
+			"breakpoints": true
 		}
 	]
 }
