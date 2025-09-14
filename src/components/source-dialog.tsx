@@ -20,7 +20,11 @@ import {
 	FormItem,
 	FormMessage,
 } from "@/components/ui/form";
-import { parseUrls, type ResourceData, resourceSchema } from "@/lib/app-schema";
+import {
+	parseUrls,
+	type ResourceData,
+	resourceSchema,
+} from "@/lib/schema/app-schema";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 

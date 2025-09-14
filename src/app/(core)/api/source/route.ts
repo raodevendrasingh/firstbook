@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { exa, googleAI } from "@/ai/lib/services";
 import { db } from "@/db/drizzle";
 import { chat, embedding, type Resource, resource } from "@/db/schema";
+import { exa, googleAI } from "@/lib/ai/services";
 import { auth } from "@/lib/auth";
 import type { ApiResponse } from "@/lib/types";
 import { createChunks } from "@/utils/createChunks";

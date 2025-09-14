@@ -7,11 +7,11 @@ import {
 } from "ai";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import systemPrompt from "@/ai/lib/prompt/system.md";
-import { searchResource } from "@/ai/tools/search-resource";
-import { webSearch } from "@/ai/tools/web-search";
 import { db } from "@/db/drizzle";
 import { chat, message, type Resource } from "@/db/schema";
+import systemPrompt from "@/lib/ai/prompt/system.md";
+import { searchResource } from "@/lib/ai/tools/search-resource";
+import { webSearch } from "@/lib/ai/tools/web-search";
 import { auth } from "@/lib/auth";
 import type { ApiResponse } from "@/lib/types";
 import { convertDbMessagesToUI } from "@/utils/convert-db-messages";

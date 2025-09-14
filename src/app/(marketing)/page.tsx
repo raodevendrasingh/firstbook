@@ -168,8 +168,7 @@ export default function Marketing() {
 						<div className="flex items-center gap-3">
 							<CopyrightIcon className="size-4 text-muted-foreground" />
 							<span className="text-base text-muted-foreground font-light">
-								{new Date().getFullYear()} FirstbookLM. Open
-								Source Project.
+								{new Date().getFullYear()} FirstbookLM. OSS.
 							</span>
 						</div>
 					</div>

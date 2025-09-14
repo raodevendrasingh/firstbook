@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	DropdownMenu,
@@ -25,7 +26,6 @@ import type {
 	FetchNotebooksResponse,
 	notebooksWithCounts,
 } from "@/lib/types";
-import { Button } from "./ui/button";
 
 const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
@@ -131,7 +131,6 @@ export const RecentNotebooks = () => {
 
 				if (result.success) {
 					if (result.data) {
-						// Cache the result
 						cache.set(url, {
 							data: result.data.notebooks,
 							timestamp: now,
@@ -157,7 +156,7 @@ export const RecentNotebooks = () => {
 				<div className="text-2xl font-medium w-full">My Notebooks</div>
 				{notebooks.length > 0 && (
 					<Button
-						className="md:rounded-full gap-2"
+						className="rounded-2xl sm:rounded-full gap-2"
 						onClick={handleCreateNewNotebook}
 					>
 						{isPending ? (

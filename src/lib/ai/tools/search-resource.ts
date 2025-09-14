@@ -1,9 +1,9 @@
 import { tool } from "ai";
 import { inArray, sql } from "drizzle-orm";
 import z from "zod";
-import { googleAI } from "@/ai/lib/services";
 import { db } from "@/db/drizzle";
 import { embedding, type Resource, resource } from "@/db/schema";
+import { googleAI } from "@/lib/ai/services";
 import { normalizeVector } from "@/utils/normalize-vector";
 
 export const searchResource = (selectedResources: Resource[]) =>

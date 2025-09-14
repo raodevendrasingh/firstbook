@@ -132,7 +132,7 @@ export function ChatContainer({
 															from={message.role}
 														>
 															<MessageContent variant="flat">
-																<Response>
+																<Response className="md:text-base">
 																	{part.text}
 																</Response>
 															</MessageContent>

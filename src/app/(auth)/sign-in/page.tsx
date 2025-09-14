@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
-import { type SignInData, signInSchema } from "@/lib/auth-schema";
+import { type SignInData, signInSchema } from "@/lib/schema/auth-schema";
 import { getInputType } from "../_components/get-input-type";
 import { GoogleAuthButton } from "../_components/google-auth-button";
 

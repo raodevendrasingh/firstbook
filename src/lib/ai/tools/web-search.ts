@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
-import { exa } from "@/ai/lib/services";
+import { exa } from "@/lib/ai/services";
 
 export const webSearch = tool({
 	description: `Search the web for up-to-date information, use this tool only if the user asks about real-time events 

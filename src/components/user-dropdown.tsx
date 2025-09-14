@@ -16,8 +16,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { loadAvatar } from "@/lib/avatar-utils";
 import { cn } from "@/lib/utils";
+import { loadAvatar } from "@/utils/avatar-utils";
 import { ThemeModeToggle } from "./theme-toggle";
 import { Skeleton } from "./ui/skeleton";
 
