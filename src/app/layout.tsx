@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 		siteName: "FirstbookLM",
 		images: [
 			{
-				url: "/og.png",
+				url: "/src/opengraph-image.png",
 				width: 1200,
 				height: 630,
 				alt: "FirstbookLM",
