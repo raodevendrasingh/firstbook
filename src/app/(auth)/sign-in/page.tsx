@@ -2,11 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import logo from "@/assets/brand/firstbook_logo.svg";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -74,6 +76,14 @@ export default function SignIn() {
 			<div className="flex w-full max-w-sm flex-col gap-2">
 				<Card className="rounded-2xl border-none bg-transparent shadow-none">
 					<CardHeader className="text-center">
+						<div className="flex items-center justify-center mb-5">
+							<Image
+								src={logo}
+								alt="FirstbookLM"
+								width={32}
+								height={32}
+							/>
+						</div>
 						<CardTitle className="text-2xl">Welcome Back</CardTitle>
 						<CardDescription>
 							Continue with your Google account

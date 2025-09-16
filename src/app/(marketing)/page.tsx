@@ -8,7 +8,9 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import logo from "@/assets/brand/firstbook_logo.svg";
 import { GithubIcon } from "@/assets/icons/github";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +20,12 @@ export default function Marketing() {
 			<header className="border-b border-border/40 bg-background/80 backdrop-blur-sm">
 				<div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<BookOpen className="h-6 w-6 text-primary" />
+						<Image
+							src={logo}
+							alt="FirstbookLM"
+							width={32}
+							height={32}
+						/>
 						<span className="font-semibold text-2xl">
 							FirstbookLM
 						</span>

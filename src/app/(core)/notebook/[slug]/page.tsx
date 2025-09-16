@@ -161,7 +161,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 
 	return (
 		<div className="relative h-screen flex flex-col gap-2 overflow-hidden">
-			<nav className="fixed flex items-center h-14 w-full md:px-8 bg-background px-4 border-b border-border z-50">
+			<header className="fixed flex items-center h-14 w-full md:px-8 bg-background px-4 border-b border-border z-50">
 				<div className="flex w-full items-center justify-between mx-auto">
 					<div className="flex flex-row items-center gap-3">
 						<Button
@@ -179,7 +179,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					</div>
 					<UserDropdown />
 				</div>
-			</nav>
+			</header>
 
 			{/* Mobile Tabs */}
 			<Tabs
