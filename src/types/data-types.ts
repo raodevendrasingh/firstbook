@@ -1,5 +1,9 @@
-import type { UIMessage } from "ai";
-import type { Resource } from "@/db/schema";
+import type { Session, User } from "better-auth";
+
+export interface UserSession {
+	user: User;
+	session: Session;
+}
 
 export type notebooksWithCounts = {
 	resourceCount: number;
@@ -9,26 +13,17 @@ export type notebooksWithCounts = {
 	userId: string;
 };
 
-export type ApiResponse<T = undefined> =
-	| {
-			success: true;
-			message: string;
-			data?: T;
-	  }
-	| { success: false; error: string };
-
-export type CreateNotebookResponse = ApiResponse<{ notebookId: string }>;
-
-export type FetchNotebooksResponse = ApiResponse<{
-	notebooks: notebooksWithCounts[];
-}>;
-
-export type FetchChatResponse = ApiResponse<{
-	messages: UIMessage[];
-	title: string;
-}>;
-
-export type SourceFetchResponse = ApiResponse<{ resource: Resource[] }>;
+export interface ModelConfig {
+	openaiKey?: string;
+	anthropicKey?: string;
+	googleKey?: string;
+}
+export interface Keys {
+	openaiKey?: string;
+	anthropicKey?: string;
+	googleKey?: string;
+	exaKey?: string;
+}
 
 export type ExaSearchResponse = {
 	requestId: string;
@@ -67,4 +62,12 @@ export type CostDollars = {
 		highlights?: number;
 		summary?: number;
 	};
+};
+
+export type SafeKeys = {
+	id: string;
+	provider: "exa" | "openai" | "gemini" | "anthropic";
+	createdAt: Date;
+	updatedAt: Date;
+	hasKey: boolean;
 };

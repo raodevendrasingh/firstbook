@@ -65,7 +65,9 @@ export function SourceDialog({
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
-				throw new Error("Failed to add source");
+				const result = await res.json();
+				toast.error(result.error);
+				return;
 			}
 			toast.success("Resources added");
 			form.reset({ urls: "" });

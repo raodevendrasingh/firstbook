@@ -1,10 +1,23 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { GoogleGenAI } from "@google/genai";
 import Exa from "exa-js";
+import type { Keys } from "@/types/data-types";
 
-const googleAI = new GoogleGenAI({
-	apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
-});
+export function createServices(apiKeys?: Keys) {
+	const openaiKey = apiKeys?.openaiKey || process.env.OPENAI_API_KEY;
+	const anthropicKey = apiKeys?.anthropicKey || process.env.ANTHROPIC_API_KEY;
+	const googleKey =
+		apiKeys?.googleKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+	const exaKey = apiKeys?.exaKey || process.env.EXASEARCH_API_KEY;
 
-const exa = new Exa(process.env.EXASEARCH_API_KEY!);
+	return {
+		openai: createOpenAI({ apiKey: openaiKey }),
+		anthropic: createAnthropic({ apiKey: anthropicKey }),
+		google: createGoogleGenerativeAI({ apiKey: googleKey }),
 
-export { googleAI, exa };
+		googleAI: new GoogleGenAI({ apiKey: googleKey! }),
+		exa: exaKey ? new Exa(exaKey) : null,
+	};
+}

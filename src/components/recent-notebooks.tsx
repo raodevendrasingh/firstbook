@@ -24,8 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type {
 	CreateNotebookResponse,
 	FetchNotebooksResponse,
-	notebooksWithCounts,
-} from "@/lib/types";
+} from "@/types/api-handler";
+import type { notebooksWithCounts } from "@/types/data-types";
 
 const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 

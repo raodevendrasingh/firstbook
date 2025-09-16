@@ -3,10 +3,14 @@ import { inArray, sql } from "drizzle-orm";
 import z from "zod";
 import { db } from "@/db/drizzle";
 import { embedding, type Resource, resource } from "@/db/schema";
-import { googleAI } from "@/lib/ai/services";
+import { createServices } from "@/lib/ai/services";
+import type { Keys } from "@/types/data-types";
 import { normalizeVector } from "@/utils/normalize-vector";
 
-export const searchResource = (selectedResources: Resource[]) =>
+export const searchResource = (
+	selectedResources: Resource[],
+	userKeys?: Keys,
+) =>
 	tool({
 		description:
 			"Search the user's selected resources for context information",
@@ -14,6 +18,7 @@ export const searchResource = (selectedResources: Resource[]) =>
 			query: z.string().min(1).max(100).describe("The search query"),
 		}),
 		execute: async ({ query }) => {
+			const { googleAI } = createServices(userKeys);
 			const selectedResourceIds = selectedResources.map((r) => r.id);
 
 			if (selectedResourceIds.length === 0) {

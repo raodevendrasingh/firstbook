@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
 import type { Resource } from "@/db/schema";
 import { useModelSelection } from "@/hooks/use-model-selection";
-import type { FetchChatResponse } from "@/lib/types";
+import type { FetchChatResponse } from "@/types/api-handler";
 
 const chatCache = new Map<
 	string,
@@ -41,7 +41,17 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 			api: "/api/chat",
 		}),
 		onError: (chatError) => {
-			toast.error(chatError.message);
+			let errorMessage = chatError.message;
+			try {
+				const parsed = JSON.parse(chatError.message);
+				if (parsed.error) {
+					errorMessage = parsed.error;
+				}
+			} catch {
+				// If parsing fails, use the original message
+			}
+
+			toast.error(errorMessage);
 		},
 	});
 
@@ -136,7 +146,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 									}
 								})
 								.catch(() => {});
-						}, 1000);
+						}, 6000);
 					}
 				});
 		};

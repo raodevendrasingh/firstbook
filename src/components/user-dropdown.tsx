@@ -1,6 +1,5 @@
 "use client";
 
-import type { Session, User } from "better-auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,22 +16,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import type { UserSession } from "@/types/data-types";
 import { loadAvatar } from "@/utils/avatar-utils";
+import { SettingsDialog } from "./settings-dialog";
 import { ThemeModeToggle } from "./theme-toggle";
 import { Skeleton } from "./ui/skeleton";
-
-type SessionType = {
-	user: User;
-	session: Session;
-};
 
 interface UserDropdownProps {
 	className?: string;
 }
 
 export function UserDropdown({ className }: UserDropdownProps) {
-	const [session, setSession] = useState<SessionType | null>(null);
+	const [session, setSession] = useState<UserSession | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
+	const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -95,7 +92,10 @@ export function UserDropdown({ className }: UserDropdownProps) {
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup className="flex flex-col gap-1">
-							<DropdownMenuItem className="rounded-lg">
+							<DropdownMenuItem
+								className="rounded-lg cursor-pointer"
+								onClick={() => setSettingsOpen(true)}
+							>
 								Settings
 							</DropdownMenuItem>
 							<ThemeModeToggle />
@@ -114,6 +114,10 @@ export function UserDropdown({ className }: UserDropdownProps) {
 					<Button className="rounded-full">Sign In</Button>
 				</Link>
 			)}
+			<SettingsDialog
+				open={settingsOpen}
+				onOpenChange={setSettingsOpen}
+			/>
 		</>
 	);
 }

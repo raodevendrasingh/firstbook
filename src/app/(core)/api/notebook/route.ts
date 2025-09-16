@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, message, resource } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import type { ApiResponse, notebooksWithCounts } from "@/lib/types";
+import type { ApiResponse } from "@/types/api-handler";
+import type { notebooksWithCounts } from "@/types/data-types";
 
 export const revalidate = 60;
 

@@ -3,9 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, embedding, type Resource, resource } from "@/db/schema";
-import { exa, googleAI } from "@/lib/ai/services";
+import { createServices } from "@/lib/ai/services";
+import { getApiKey } from "@/lib/api-keys";
 import { auth } from "@/lib/auth";
-import type { ApiResponse } from "@/lib/types";
+import type { ApiResponse } from "@/types/api-handler";
 import { createChunks } from "@/utils/createChunks";
 import { generateTitleFromResource } from "@/utils/generate-title-from-resource";
 import { normalizeVector } from "@/utils/normalize-vector";
@@ -13,10 +14,10 @@ import { sanitizeText } from "@/utils/sanitize-text";
 
 export const revalidate = 60;
 
-type SourcePayload = {
+interface SourcePayload {
 	urls: string[];
 	chatId: string;
-};
+}
 
 export async function POST(request: Request) {
 	try {
@@ -81,9 +82,41 @@ export async function POST(request: Request) {
 		const chatTitle = chatResult.title;
 		let titleUpdated = false;
 
+		const [exaKey, googleKey] = await Promise.all([
+			getApiKey(session.user.id, "exa"),
+			getApiKey(session.user.id, "gemini"),
+		]);
+
+		if (!exaKey) {
+			return Response.json(
+				{
+					success: false,
+					error: "Exa API key is required for source processing",
+					requiresSetup: true,
+				} satisfies ApiResponse,
+				{ status: 400 },
+			);
+		}
+
+		if (!googleKey) {
+			return Response.json(
+				{
+					success: false,
+					error: "Google API key is required for embeddings",
+					requiresSetup: true,
+				} satisfies ApiResponse,
+				{ status: 400 },
+			);
+		}
+
 		await Promise.all(
 			uniqueUrls.map(async (url) => {
-				const result = await exa.getContents([url], { text: true });
+				const { exa, googleAI } = createServices({
+					exaKey: exaKey!,
+					googleKey: googleKey!,
+				});
+
+				const result = await exa!.getContents([url], { text: true });
 				const exaResult = result.results?.[0];
 				if (!exaResult?.text) return;
 
@@ -94,6 +127,7 @@ export async function POST(request: Request) {
 							title: exaResult.title ?? "",
 							content: exaResult.text ?? "",
 						},
+						googleKey: googleKey ?? undefined,
 					})
 						.then(async (title) => {
 							await db
@@ -106,9 +140,7 @@ export async function POST(request: Request) {
 									),
 								);
 						})
-						.catch((error) => {
-							// silently ignore error
-						});
+						.catch(() => {});
 				}
 
 				const cleanedText = sanitizeText(exaResult.text);

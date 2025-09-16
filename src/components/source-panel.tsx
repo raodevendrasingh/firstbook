@@ -10,15 +10,15 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Resource } from "@/db/schema";
-import type { SourceFetchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { SourceFetchResponse } from "@/types/api-handler";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 
 const sourceCache = new Map<string, { data: Resource[]; timestamp: number }>();
 const CACHE_TTL = 60000;
 
-type sourcePanelProps = {
+interface SourcePanelProps {
 	setSourceDialogOpen: (open: boolean) => void;
 	className?: string;
 	chatId: string;
@@ -26,7 +26,7 @@ type sourcePanelProps = {
 	onNoSourcesDetected?: () => void;
 	selectedResources: Resource[];
 	onSelectedResourcesChange: (resources: Resource[]) => void;
-};
+}
 
 export const SourcePanel = ({
 	setSourceDialogOpen,
@@ -36,9 +36,10 @@ export const SourcePanel = ({
 	onNoSourcesDetected,
 	selectedResources,
 	onSelectedResourcesChange,
-}: sourcePanelProps) => {
+}: SourcePanelProps) => {
 	const [resources, setResources] = useState<Resource[] | undefined>();
 	const [loading, setLoading] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [hasFetched, setHasFetched] = useState(false);
 
 	const fetchSources = useCallback(async () => {
@@ -111,6 +112,7 @@ export const SourcePanel = ({
 
 	const handleDelete = useCallback(
 		async (id: string) => {
+			setIsDeleting(true);
 			if (!chatId) return;
 			const res = await fetch(`/api/source?chatId=${chatId}&id=${id}`, {
 				method: "DELETE",
@@ -122,6 +124,7 @@ export const SourcePanel = ({
 			} else {
 				toast.error("Failed to delete resource");
 			}
+			setIsDeleting(false);
 		},
 		[chatId, fetchSources],
 	);
@@ -129,7 +132,7 @@ export const SourcePanel = ({
 	return (
 		<div
 			className={cn(
-				"relative flex flex-col md:max-w-xs lg:max-w-md h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-xl overflow-hidden",
+				"relative flex flex-col md:max-w-xs lg:max-w-sm h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-xl overflow-hidden",
 				className,
 			)}
 		>
@@ -152,7 +155,7 @@ export const SourcePanel = ({
 				) : resources && resources.length > 0 ? (
 					resources.map((res) => (
 						<ul key={res.id} className="flex flex-col gap-2">
-							<li className="py-1 px-3 rounded-xl bg-accent/80 flex items-center justify-between gap-3">
+							<li className="py-1 px-3 rounded-lg bg-accent/80 flex items-center justify-between gap-3">
 								<div className="flex items-center gap-3">
 									<Checkbox
 										checked={selectedResources.some(
@@ -194,7 +197,11 @@ export const SourcePanel = ({
 											handleDelete(res.id);
 										}}
 									>
-										<XIcon />
+										{isDeleting ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<XIcon />
+										)}
 									</Button>
 
 									<Button

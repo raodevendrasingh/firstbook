@@ -54,7 +54,7 @@ export type ChatContainerProps = {
 
 export function ChatContainer({
 	className,
-	title = "Chat",
+	title = "Add a source to get started",
 	messages,
 	status,
 	regenerate,
