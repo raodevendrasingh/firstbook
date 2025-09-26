@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/providers/theme-provider";
 
-const outfit = Outfit({
-	variable: "--font-outfit",
+const figtree = Figtree({
+	variable: "--font-figtree",
 	subsets: ["latin"],
 });
 
@@ -16,20 +16,15 @@ export const metadata: Metadata = {
 	metadataBase: new URL(
 		process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 	),
+	alternates: {
+		canonical: "/",
+	},
 	openGraph: {
 		title: "FirstbookLM",
 		description:
 			"An open, privacy-first take on NotebookLM — lightweight, source-driven, and fully self-hostable.",
 		url: "/",
 		siteName: "FirstbookLM",
-		images: [
-			{
-				url: "/src/opengraph-image.png",
-				width: 1200,
-				height: 630,
-				alt: "FirstbookLM",
-			},
-		],
 		locale: "en_US",
 		type: "website",
 	},
@@ -38,7 +33,6 @@ export const metadata: Metadata = {
 		title: "FirstbookLM",
 		description:
 			"An open, lightweight take on NotebookLM — focused on clarity, sources, and real-time context.",
-		images: ["/og.png"],
 	},
 };
 
@@ -69,7 +63,7 @@ export default function RootLayout({
 				/>
 				<link rel="manifest" href="/site.webmanifest" />
 			</head>
-			<body className={`${outfit.variable} font-sans antialiased`}>
+			<body className={`${figtree.variable} font-sans antialiased`}>
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="system"

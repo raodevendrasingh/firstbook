@@ -36,7 +36,7 @@
 	--sidebar-accent-foreground: oklch(0.325 0 0);
 	--sidebar-border: oklch(0.9401 0 0);
 	--sidebar-ring: oklch(0.7731 0 0);
-	--font-sans: Outfit, ui-sans-serif, sans-serif, system-ui;
+	--font-sans: Figtree, ui-sans-serif, sans-serif, system-ui;
 	--font-mono: JetBrains Mono, ui-monospace, monospace;
 	--radius: 0.5rem;
 	--shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
@@ -89,7 +89,7 @@
 	--sidebar-accent-foreground: oklch(0.9674 0.0013 286.3752);
 	--sidebar-border: oklch(0.2739 0.0055 286.0326);
 	--sidebar-ring: oklch(0.8711 0.0055 286.286);
-	--font-sans: Outfit, ui-sans-serif, sans-serif, system-ui;
+	--font-sans: Figtree, ui-sans-serif, sans-serif, system-ui;
 	--font-mono: JetBrains Mono, ui-monospace, monospace;
 	--radius: 0.5rem;
 	--shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
