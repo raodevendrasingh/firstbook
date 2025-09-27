@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -20,6 +19,7 @@ import {
 	FormItem,
 	FormMessage,
 } from "@/components/ui/form";
+import { useAddSources } from "@/hooks/use-sources";
 import {
 	parseUrls,
 	type ResourceData,
@@ -41,8 +41,6 @@ export function SourceDialog({
 	onOpenChange,
 	onSourcesAdded,
 }: SourceDialogProps) {
-	const [isPending, setIsPending] = useState<boolean>(false);
-
 	const form = useForm<ResourceData>({
 		resolver: zodResolver(resourceSchema),
 		defaultValues: {
@@ -50,37 +48,26 @@ export function SourceDialog({
 		},
 	});
 
-	async function onSubmit(values: ResourceData) {
+	const addSourcesMutation = useAddSources();
+
+	const onSubmit = (values: ResourceData) => {
 		const urlArray = parseUrls(values.urls);
 
-		const payload = {
-			urls: urlArray,
-			chatId: slug,
-		};
-
-		try {
-			setIsPending(true);
-			const res = await fetch("/api/source", {
-				method: "POST",
-				body: JSON.stringify(payload),
-			});
-			if (!res.ok) {
-				const result = await res.json();
-				toast.error(result.error);
-				return;
-			}
-			toast.success("Resources added");
-			form.reset({ urls: "" });
-			onOpenChange(false);
-			onSourcesAdded?.();
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Unknown error";
-			toast.error(errorMessage);
-		} finally {
-			setIsPending(false);
-		}
-	}
+		addSourcesMutation.mutate(
+			{ urls: urlArray, chatId: slug },
+			{
+				onSuccess: () => {
+					toast.success("Resources added");
+					form.reset({ urls: "" });
+					onOpenChange(false);
+					onSourcesAdded?.();
+				},
+				onError: (error) => {
+					toast.error(error.message || "Failed to add resources");
+				},
+			},
+		);
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,10 +124,10 @@ export function SourceDialog({
 							<div className="flex justify-end flex-shrink-0 mt-4">
 								<Button
 									type="submit"
-									disabled={isPending}
+									disabled={addSourcesMutation.isPending}
 									className="w-28 rounded-full"
 								>
-									{isPending ? (
+									{addSourcesMutation.isPending ? (
 										<Loader2 className="animate-spin" />
 									) : (
 										"Submit"

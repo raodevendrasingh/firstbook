@@ -10,7 +10,7 @@ import {
 	Plus,
 	Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,27 +33,34 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+	useDeleteKey,
+	useFetchKeys,
+	useStoreKey,
+	useUpdateKey,
+} from "@/hooks/use-keys";
+import {
 	type ApiKeyData,
 	apiKeySchema,
 	type Provider,
 	providerLabels,
 } from "@/lib/schema/api-key-schema";
 import { cn } from "@/lib/utils";
-import type { FetchApiKeysResponse } from "@/types/api-handler";
-import type { SafeKeys } from "@/types/data-types";
 
-interface ApiKeyManagerProps {
-	userId: string;
-}
-
-export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
-	const [storedKeys, setStoredKeys] = useState<SafeKeys[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [isSubmitting, setIsSubmitting] = useState(false);
+export function ApiKeyManager() {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
 	const [editingKey, setEditingKey] = useState<string | null>(null);
 	const [showAddForm, setShowAddForm] = useState(false);
+
+	const { data: keysData, isLoading } = useFetchKeys();
+	const storeKeyMutation = useStoreKey();
+	const updateKeyMutation = useUpdateKey();
+	const deleteKeyMutation = useDeleteKey();
+
+	const isCreating = storeKeyMutation.isPending;
+	const isUpdating = updateKeyMutation.isPending;
+
+	const storedKeys = keysData?.success ? keysData.data?.keys || [] : [];
 
 	const form = useForm<ApiKeyData>({
 		resolver: zodResolver(apiKeySchema),
@@ -70,93 +77,41 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 		},
 	});
 
-	const fetchKeys = useCallback(async () => {
-		try {
-			const response = await fetch("/api/keys");
-			const result: FetchApiKeysResponse = await response.json();
-			if (result.success) {
-				if (result.data) {
-					setStoredKeys(result.data.keys);
-				} else {
-					toast.error("Error fetching API keys");
-				}
-			} else {
-				toast.error(result.error);
-			}
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Unknown error";
-			toast.error(errorMessage);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		if (userId) {
-			fetchKeys();
-		}
-	}, [userId, fetchKeys]);
-
-	const onSubmit = async (data: ApiKeyData) => {
-		setIsSubmitting(true);
-		try {
-			const response = await fetch("/api/keys", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+	const onSubmit = (data: ApiKeyData) => {
+		storeKeyMutation.mutate(
+			{ provider: data.provider, apiKey: data.apiKey },
+			{
+				onSuccess: (result) => {
+					toast.success(
+						`${providerLabels[data.provider]} API key added successfully`,
+					);
+					form.reset();
+					setShowAddForm(false);
 				},
-				body: JSON.stringify(data),
-			});
-
-			const result = await response.json();
-
-			if (response.ok) {
-				toast.success(
-					`${providerLabels[data.provider]} API key added successfully`,
-				);
-				form.reset();
-				setShowAddForm(false);
-				await fetchKeys();
-			} else {
-				toast.error(result.error || "Failed to add API key");
-			}
-		} catch {
-			toast.error("Failed to add API key");
-		} finally {
-			setIsSubmitting(false);
-		}
+				onError: (error) => {
+					toast.error(error.message || "Failed to add API key");
+				},
+			},
+		);
 	};
 
-	const onUpdate = async (keyId: string, apiKey: string) => {
-		setIsSubmitting(true);
-		try {
-			const response = await fetch("/api/keys", {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
+	const onUpdate = (keyId: string, apiKey: string) => {
+		updateKeyMutation.mutate(
+			{ keyId, apiKey },
+			{
+				onSuccess: () => {
+					toast.success("API key updated successfully");
+					setEditingKey(null);
+					editForm.reset();
 				},
-				body: JSON.stringify({ keyId, apiKey }),
-			});
-
-			const result = await response.json();
-
-			if (response.ok) {
-				toast.success("API key updated successfully");
-				setEditingKey(null);
-				editForm.reset();
-				await fetchKeys();
-			} else {
-				toast.error(result.error || "Failed to update API key");
-			}
-		} catch {
-			toast.error("Failed to update API key");
-		} finally {
-			setIsSubmitting(false);
-		}
+				onError: (error) => {
+					toast.error(error.message || "Failed to update API key");
+				},
+			},
+		);
 	};
 
-	const onDelete = async (keyId: string, provider: Provider) => {
+	const onDelete = (keyId: string, provider: Provider) => {
 		if (
 			!confirm(
 				`Are you sure you want to delete your ${providerLabels[provider]} API key?`,
@@ -165,27 +120,20 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 			return;
 		}
 
-		try {
-			setIsDeleting(true);
-			const response = await fetch(`/api/keys?keyId=${keyId}`, {
-				method: "DELETE",
-			});
-
-			const result = await response.json();
-
-			if (response.ok) {
+		setIsDeleting(true);
+		deleteKeyMutation.mutate(keyId, {
+			onSuccess: () => {
 				toast.success(
 					`${providerLabels[provider]} API key deleted successfully`,
 				);
-				await fetchKeys();
-			} else {
-				toast.error(result.error || "Failed to delete API key");
-			}
-		} catch {
-			toast.error("Failed to delete API key");
-		} finally {
-			setIsDeleting(false);
-		}
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to delete API key");
+			},
+			onSettled: () => {
+				setIsDeleting(false);
+			},
+		});
 	};
 
 	const startEdit = (keyId: string) => {
@@ -203,7 +151,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 		form.reset();
 	};
 
-	if (loading) {
+	if (isLoading) {
 		return <ApiKeySkeleton />;
 	}
 
@@ -220,7 +168,6 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 			) : (
 				<Card className="p-2 rounded-xl border-accent">
 					<CardContent className="p-2">
-						{/* <div className="space-y-4"> */}
 						<Form {...form}>
 							<form
 								onSubmit={form.handleSubmit(onSubmit)}
@@ -321,10 +268,10 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 									</Button>
 									<Button
 										type="submit"
-										disabled={isSubmitting}
+										disabled={isCreating}
 										className="w-24 rounded-xl"
 									>
-										{isSubmitting ? (
+										{isCreating ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
 											"Add Key"
@@ -333,7 +280,6 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 								</div>
 							</form>
 						</Form>
-						{/* </div> */}
 					</CardContent>
 				</Card>
 			)}
@@ -465,11 +411,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 															type="submit"
 															size="sm"
 															disabled={
-																isSubmitting
+																isUpdating
 															}
 															className="rounded-xl w-24"
 														>
-															{isSubmitting ? (
+															{isUpdating ? (
 																<Loader2 className="h-4 w-4 animate-spin" />
 															) : (
 																"Save"

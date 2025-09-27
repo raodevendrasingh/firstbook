@@ -12,8 +12,6 @@ import { generateTitleFromResource } from "@/utils/generate-title-from-resource"
 import { normalizeVector } from "@/utils/normalize-vector";
 import { sanitizeText } from "@/utils/sanitize-text";
 
-export const revalidate = 60;
-
 interface SourcePayload {
 	urls: string[];
 	chatId: string;

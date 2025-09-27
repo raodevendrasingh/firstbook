@@ -7,8 +7,6 @@ import { auth } from "@/lib/auth";
 import type { ApiResponse } from "@/types/api-handler";
 import type { notebooksWithCounts } from "@/types/data-types";
 
-export const revalidate = 60;
-
 export async function POST() {
 	try {
 		const session = await auth.api.getSession({

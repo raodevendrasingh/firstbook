@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,45 +21,39 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import type {
-	CreateNotebookResponse,
-	FetchNotebooksResponse,
-} from "@/types/api-handler";
-import type { notebooksWithCounts } from "@/types/data-types";
+import {
+	useCreateNotebook,
+	useDeleteNotebook,
+	useFetchNotebooks,
+} from "@/hooks/use-notebooks";
 
 const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
-const cache = new Map<
-	string,
-	{ data: notebooksWithCounts[]; timestamp: number }
->();
-const CACHE_TTL = 60000;
-
 export const RecentNotebooks = () => {
 	const router = useRouter();
-	const [isPending, setIsPending] = useState(false);
-	const [deletingId, setDeletingId] = useState<string | null>(null);
-	const [notebooks, setNotebooks] = useState<notebooksWithCounts[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-	const handleCreateNewNotebook = async () => {
-		try {
-			setIsPending(true);
-			const response = await fetch("/api/notebook", {
-				method: "POST",
-			});
-			const result: CreateNotebookResponse = await response.json();
+	const { data: notebooksData, isLoading } = useFetchNotebooks();
+	const createNotebookMutation = useCreateNotebook();
+	const deleteNotebookMutation = useDeleteNotebook();
 
-			if (result.success) {
-				router.push(`/notebook/${result.data?.notebookId}`);
-			} else {
-				toast.error(result.error);
-			}
-		} catch {
-			toast.error("Failed to create new notebook");
-		} finally {
-			setIsPending(false);
-		}
+	const notebooks = notebooksData?.success
+		? notebooksData.data?.notebooks || []
+		: [];
+
+	const handleCreateNewNotebook = () => {
+		createNotebookMutation.mutate(undefined, {
+			onSuccess: (result) => {
+				if (result.success) {
+					router.push(`/notebook/${result.data?.notebookId}`);
+				} else {
+					toast.error(result.error);
+				}
+			},
+			onError: () => {
+				toast.error("Failed to create new notebook");
+			},
+		});
 	};
 
 	const handleOpenInNewTab = (
@@ -71,7 +65,7 @@ export const RecentNotebooks = () => {
 		window.open(`/notebook/${notebookId}`, "_blank", "noopener,noreferrer");
 	};
 
-	const handleDeleteNotebook = async (
+	const handleDeleteNotebook = (
 		notebookId: string,
 		event: React.MouseEvent,
 	) => {
@@ -86,69 +80,27 @@ export const RecentNotebooks = () => {
 			return;
 		}
 
-		try {
-			setDeletingId(notebookId);
-			const res = await fetch(`/api/notebook?notebookId=${notebookId}`, {
-				method: "DELETE",
-			});
-
-			if (res.ok) {
-				setNotebooks((prev) =>
-					prev.filter((nb) => nb.id !== notebookId),
-				);
-				cache.delete("/api/notebook");
+		setDeletingIds((prev) => {
+			const next = new Set(prev);
+			next.add(notebookId);
+			return next;
+		});
+		deleteNotebookMutation.mutate(notebookId, {
+			onSuccess: () => {
 				toast.success("Notebook deleted successfully");
-			} else {
+			},
+			onError: () => {
 				toast.error("Failed to delete notebook");
-			}
-		} catch {
-			toast.error("Failed to delete notebook");
-		} finally {
-			setDeletingId(null);
-		}
-	};
-
-	useEffect(() => {
-		const fetchNotebooks = async () => {
-			const url = "/api/notebook";
-			const now = Date.now();
-			const cached = cache.get(url);
-
-			if (cached && now - cached.timestamp < CACHE_TTL) {
-				setNotebooks(cached.data);
-				setIsLoading(false);
-				return;
-			}
-
-			try {
-				const response = await fetch(url, {
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-					},
+			},
+			onSettled: () => {
+				setDeletingIds((prev) => {
+					const next = new Set(prev);
+					next.delete(notebookId);
+					return next;
 				});
-				const result: FetchNotebooksResponse = await response.json();
-
-				if (result.success) {
-					if (result.data) {
-						cache.set(url, {
-							data: result.data.notebooks,
-							timestamp: now,
-						});
-						setNotebooks(result.data.notebooks);
-					} else {
-						toast.error("No data received");
-					}
-				} else {
-					toast.error(result.error);
-				}
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchNotebooks();
-	}, []);
+			},
+		});
+	};
 
 	return (
 		<div className="flex flex-col items-center gap-3 pt-10 w-full">
@@ -159,7 +111,7 @@ export const RecentNotebooks = () => {
 						className="rounded-2xl sm:rounded-full gap-2"
 						onClick={handleCreateNewNotebook}
 					>
-						{isPending ? (
+						{createNotebookMutation.isPending ? (
 							<Loader2 className="animate-spin" />
 						) : (
 							<Plus />
@@ -201,10 +153,10 @@ export const RecentNotebooks = () => {
 							</div>
 							<Button
 								onClick={handleCreateNewNotebook}
-								disabled={isPending}
+								disabled={createNotebookMutation.isPending}
 								className="gap-2 rounded-full"
 							>
-								{isPending ? (
+								{createNotebookMutation.isPending ? (
 									<Loader2 className="w-4 h-4 animate-spin" />
 								) : (
 									<Plus className="w-4 h-4" />
@@ -275,10 +227,10 @@ export const RecentNotebooks = () => {
 											onClick={(e) =>
 												handleDeleteNotebook(nb.id, e)
 											}
-											disabled={deletingId === nb.id}
+											disabled={deletingIds.has(nb.id)}
 											className="rounded-lg"
 										>
-											{deletingId === nb.id ? (
+											{deletingIds.has(nb.id) ? (
 												<Loader2 className="size-4 animate-spin" />
 											) : (
 												<Trash2 className="size-4" />

@@ -7,16 +7,13 @@ import {
 	ScrollText,
 	XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Resource } from "@/db/schema";
+import { useDeleteSource, useFetchSources } from "@/hooks/use-sources";
 import { cn } from "@/lib/utils";
-import type { SourceFetchResponse } from "@/types/api-handler";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-
-const sourceCache = new Map<string, { data: Resource[]; timestamp: number }>();
-const CACHE_TTL = 60000;
 
 interface SourcePanelProps {
 	setSourceDialogOpen: (open: boolean) => void;
@@ -37,97 +34,63 @@ export const SourcePanel = ({
 	selectedResources,
 	onSelectedResourcesChange,
 }: SourcePanelProps) => {
-	const [resources, setResources] = useState<Resource[] | undefined>();
-	const [loading, setLoading] = useState(false);
-	const [isDeleting, setIsDeleting] = useState(false);
-	const [hasFetched, setHasFetched] = useState(false);
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-	const fetchSources = useCallback(async () => {
-		if (!chatId) return;
+	const { data: sourcesData, isLoading } = useFetchSources(chatId);
+	const deleteSourceMutation = useDeleteSource();
 
-		const url = `/api/source?chatId=${chatId}`;
-		const now = Date.now();
-		const cached = sourceCache.get(url);
+	const resources = sourcesData?.success
+		? sourcesData.data?.resource || []
+		: [];
 
-		if (cached && now - cached.timestamp < CACHE_TTL) {
-			const sources = cached.data;
-			setResources(sources);
-			setHasFetched(true);
-			onSelectedResourcesChange(sources);
+	// Update selected resources when sources change
+	useEffect(() => {
+		if (resources.length > 0) {
+			onSelectedResourcesChange(resources);
+		}
+	}, [resources, onSelectedResourcesChange]);
 
-			if (sources.length === 0 && onNoSourcesDetected) {
-				setTimeout(() => {
-					onNoSourcesDetected();
-				}, 500);
-			}
+	// Handle no sources detected
+	useEffect(() => {
+		if (!onNoSourcesDetected || isLoading) {
 			return;
 		}
 
-		setLoading(true);
-		try {
-			const res = await fetch(url, {
-				method: "GET",
-			});
-			const result: SourceFetchResponse = await res.json();
+		if (resources.length === 0) {
+			const timeoutId = window.setTimeout(() => {
+				onNoSourcesDetected();
+			}, 500);
 
-			if (result.success) {
-				const sources = result.data?.resource || [];
-
-				sourceCache.set(url, {
-					data: sources,
-					timestamp: now,
-				});
-
-				setResources(sources);
-				setHasFetched(true);
-
-				onSelectedResourcesChange(sources);
-
-				if (sources.length === 0 && onNoSourcesDetected) {
-					setTimeout(() => {
-						onNoSourcesDetected();
-					}, 500);
-				}
-			} else {
-				toast.error(result.error);
-			}
-		} catch {
-			toast.error("Failed to fetch sources");
-		} finally {
-			setLoading(false);
+			return () => window.clearTimeout(timeoutId);
 		}
-	}, [chatId, onNoSourcesDetected, onSelectedResourcesChange]);
+	}, [isLoading, onNoSourcesDetected, resources.length]);
 
-	useEffect(() => {
-		if (chatId && !hasFetched && !loading) {
-			fetchSources();
-		}
-	}, [chatId, hasFetched, loading, fetchSources]);
-
-	useEffect(() => {
-		if (refreshTrigger && refreshTrigger > 0) {
-			setHasFetched(false);
-		}
-	}, [refreshTrigger]);
-
-	const handleDelete = useCallback(
-		async (id: string) => {
-			setIsDeleting(true);
-			if (!chatId) return;
-			const res = await fetch(`/api/source?chatId=${chatId}&id=${id}`, {
-				method: "DELETE",
-			});
-			if (res.ok) {
-				sourceCache.delete(`/api/source?chatId=${chatId}`);
-				fetchSources();
-				toast.success("Resource deleted successfully");
-			} else {
-				toast.error("Failed to delete resource");
-			}
-			setIsDeleting(false);
-		},
-		[chatId, fetchSources],
-	);
+	const handleDelete = (id: string) => {
+		if (!chatId) return;
+		setDeletingIds((prev) => {
+			const next = new Set(prev);
+			next.add(id);
+			return next;
+		});
+		deleteSourceMutation.mutate(
+			{ chatId, id },
+			{
+				onSuccess: () => {
+					toast.success("Resource deleted successfully");
+				},
+				onError: (error) => {
+					toast.error(error.message || "Failed to delete resource");
+				},
+				onSettled: () => {
+					setDeletingIds((prev) => {
+						const next = new Set(prev);
+						next.delete(id);
+						return next;
+					});
+				},
+			},
+		);
+	};
 
 	return (
 		<div
@@ -145,7 +108,7 @@ export const SourcePanel = ({
 					<PlusIcon className="size-4" />
 					Add Sources
 				</Button>
-				{loading ? (
+				{isLoading ? (
 					<div className="flex items-center justify-center h-32 gap-2">
 						<div className="text-sm text-muted-foreground">
 							Loading sources
@@ -197,7 +160,7 @@ export const SourcePanel = ({
 											handleDelete(res.id);
 										}}
 									>
-										{isDeleting ? (
+										{deletingIds.has(res.id) ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
 											<XIcon />

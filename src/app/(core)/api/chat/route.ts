@@ -20,8 +20,6 @@ import { resolveModel } from "@/utils/resolve-models";
 
 export const maxDuration = 30;
 
-export const revalidate = 60;
-
 interface MessagePayload {
 	selectedModel: string;
 	chatId: string;

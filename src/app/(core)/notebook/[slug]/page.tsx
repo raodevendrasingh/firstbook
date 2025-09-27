@@ -13,14 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserDropdown } from "@/components/user-dropdown";
 import type { Resource } from "@/db/schema";
+import { useFetchChat } from "@/hooks/use-chat";
 import { useModelSelection } from "@/hooks/use-model-selection";
-import type { FetchChatResponse } from "@/types/api-handler";
-
-const chatCache = new Map<
-	string,
-	{ data: FetchChatResponse; timestamp: number }
->();
-const CACHE_TTL = 60000;
 
 interface NotebookPageProps {
 	params: Promise<{ slug: string }>;
@@ -55,6 +49,8 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 		},
 	});
 
+	const { data: chatData } = useFetchChat(slug);
+
 	const { selectedModel, selectModel, allModels } = useModelSelection();
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -80,84 +76,14 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	};
 
 	useEffect(() => {
-		let isCancelled = false;
-		let intervalId: NodeJS.Timeout | null = null;
-
-		const fetchOnce = () => {
-			const url = `/api/chat?chatId=${slug}`;
-			const now = Date.now();
-			const cached = chatCache.get(url);
-
-			// Check if we have valid cached data
-			if (cached && now - cached.timestamp < CACHE_TTL) {
-				const result = cached.data;
-				if (!result.success) {
-					toast.error("Chat not found!");
-					router.push("/notebooks");
-					return;
-				}
-				if (result.data) {
-					setMessages(result.data.messages);
-					setTitle(result.data.title);
-				}
-				return;
-			}
-
-			// Fetch fresh data
-			fetch(url)
-				.then((res) => res.json())
-				.then((result: FetchChatResponse) => {
-					if (!result.success) {
-						toast.error("Chat not found!");
-						router.push("/notebooks");
-						return;
-					}
-
-					// Cache the result
-					chatCache.set(url, {
-						data: result,
-						timestamp: now,
-					});
-
-					if (result.data) {
-						setMessages(result.data.messages);
-						setTitle(result.data.title);
-					}
-
-					if (
-						!isCancelled &&
-						result.data &&
-						result.data.title.length === 0 &&
-						title.length === 0
-					) {
-						intervalId = setInterval(() => {
-							fetch(`/api/chat?chatId=${slug}`)
-								.then((res) => res.json())
-								.then((poll: FetchChatResponse) => {
-									if (
-										!isCancelled &&
-										poll.success &&
-										poll.data &&
-										poll.data.title.length > 0
-									) {
-										setTitle(poll.data.title);
-										if (intervalId)
-											clearInterval(intervalId);
-									}
-								})
-								.catch(() => {});
-						}, 6000);
-					}
-				});
-		};
-
-		fetchOnce();
-
-		return () => {
-			isCancelled = true;
-			if (intervalId) clearInterval(intervalId);
-		};
-	}, [slug, setMessages, router, title.length]);
+		if (chatData?.success && chatData.data) {
+			setMessages(chatData.data.messages);
+			setTitle(chatData.data.title);
+		} else if (chatData && !chatData.success) {
+			toast.error("Chat not found!");
+			router.push("/notebooks");
+		}
+	}, [chatData, setMessages, router]);
 
 	return (
 		<div className="relative h-screen flex flex-col gap-2 overflow-hidden">
