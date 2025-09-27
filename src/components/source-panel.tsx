@@ -43,14 +43,12 @@ export const SourcePanel = ({
 		? sourcesData.data?.resource || []
 		: [];
 
-	// Update selected resources when sources change
 	useEffect(() => {
 		if (resources.length > 0) {
 			onSelectedResourcesChange(resources);
 		}
 	}, [resources, onSelectedResourcesChange]);
 
-	// Handle no sources detected
 	useEffect(() => {
 		if (!onNoSourcesDetected || isLoading) {
 			return;
@@ -119,7 +117,7 @@ export const SourcePanel = ({
 					resources.map((res) => (
 						<ul key={res.id} className="flex flex-col gap-2">
 							<li className="py-1 px-3 rounded-lg bg-accent/80 flex items-center justify-between gap-3">
-								<div className="flex items-center gap-3">
+								<div className="flex items-center gap-3 flex-1 min-w-0">
 									<Checkbox
 										checked={selectedResources.some(
 											(selected) =>
@@ -142,7 +140,7 @@ export const SourcePanel = ({
 											}
 										}}
 									/>
-									<span className="flex flex-col items-start">
+									<span className="flex flex-col items-start min-w-0 flex-1 max-h-10 overflow-hidden">
 										<span className="text-sm font-medium line-clamp-1">
 											{res.title}
 										</span>
@@ -151,7 +149,7 @@ export const SourcePanel = ({
 										</span>
 									</span>
 								</div>
-								<span className="flex items-center gap-0.5">
+								<span className="flex items-center gap-0.5 flex-shrink-0">
 									<Button
 										variant="ghost"
 										size="icon"

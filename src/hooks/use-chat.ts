@@ -16,6 +16,6 @@ export function useFetchChat(chatId: string) {
 			}
 			return response.json();
 		},
-		staleTime: 1000 * 30,
+		staleTime: 1000 * 30 * 5,
 	});
 }

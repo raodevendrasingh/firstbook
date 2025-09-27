@@ -165,7 +165,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 							{sessionLoading ? (
 								<SettingsSkeleton />
 							) : (
-								<ApiKeyManager userId={session.user.id} />
+								<ApiKeyManager />
 							)}
 						</CardContent>
 					</Card>
