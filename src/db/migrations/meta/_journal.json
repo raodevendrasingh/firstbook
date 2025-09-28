@@ -43,6 +43,13 @@
 			"when": 1757868882242,
 			"tag": "0005_next_naoko",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1759069968505,
+			"tag": "0006_dark_violations",
+			"breakpoints": true
 		}
 	]
 }

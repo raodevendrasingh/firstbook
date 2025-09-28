@@ -5,7 +5,6 @@ import {
 	pgTable,
 	text,
 	timestamp,
-	varchar,
 	vector,
 } from "drizzle-orm/pg-core";
 import { user } from "./user";
@@ -24,7 +23,7 @@ export const message = pgTable("message", {
 	chatId: text("chatId")
 		.notNull()
 		.references(() => chat.id),
-	role: varchar("role").notNull(),
+	role: text("role").notNull(),
 	parts: json("parts").notNull(),
 	attachments: json("attachments").notNull(),
 	createdAt: timestamp("createdAt").notNull(),
@@ -34,12 +33,12 @@ export const resource = pgTable("resource", {
 	id: text("id").primaryKey().notNull(),
 	title: text("title").notNull(),
 	content: text("content"),
-	type: varchar("type", { enum: ["text", "code", "image", "sheet"] })
+	type: text("type", { enum: ["text", "files", "links"] })
 		.notNull()
 		.default("text"),
 	source: text("source"),
 	vectorId: text("vectorId"),
-	status: varchar("status", {
+	status: text("status", {
 		enum: ["fetched", "embedded", "failed"],
 	}).default("fetched"),
 	chatId: text("chatId")
@@ -63,7 +62,7 @@ export const embedding = pgTable("embedding", {
 	chunk: text("chunk").notNull(),
 	vector: vector("vector", { dimensions: 1536 }).notNull(),
 	position: integer("position").notNull(),
-	model: varchar("model").notNull(),
+	model: text("model").notNull(),
 	createdAt: timestamp("createdAt").notNull(),
 });
 

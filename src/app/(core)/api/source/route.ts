@@ -189,7 +189,7 @@ export async function POST(request: Request) {
 							title: exaResult.title ?? "",
 							content: cleanedText,
 							status: "fetched",
-							type: "text",
+							type: "links",
 							source: url,
 							createdAt: new Date(),
 						} as Resource;
