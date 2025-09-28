@@ -144,9 +144,9 @@ export const SourcePanel = ({
 										<span className="text-sm font-medium line-clamp-1">
 											{res.title}
 										</span>
-										<span className="text-xs text-muted-foreground line-clamp-1">
+										{/* <span className="text-xs text-muted-foreground line-clamp-1">
 											{res.source}
-										</span>
+										</span> */}
 									</span>
 								</div>
 								<span className="flex items-center gap-0.5 flex-shrink-0">

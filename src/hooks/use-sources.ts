@@ -17,7 +17,7 @@ export function useFetchSources(chatId: string) {
 			}
 			return response.json();
 		},
-		staleTime: 1000 * 30, // 30 seconds
+		staleTime: 1000 * 30 * 5,
 		enabled: !!chatId,
 	});
 }
@@ -27,10 +27,16 @@ export function useAddSources() {
 
 	return useMutation({
 		mutationFn: async ({
-			urls,
+			type,
+			data,
 			chatId,
 		}: {
-			urls: string[];
+			type: "files" | "links" | "text";
+			data: {
+				urls?: string[];
+				files?: File[];
+				text?: string;
+			};
 			chatId: string;
 		}) => {
 			const response = await fetch("/api/source", {
@@ -38,7 +44,7 @@ export function useAddSources() {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ urls, chatId }),
+				body: JSON.stringify({ type, data, chatId }),
 			});
 
 			if (!response.ok) {

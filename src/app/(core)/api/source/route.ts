@@ -13,8 +13,13 @@ import { normalizeVector } from "@/utils/normalize-vector";
 import { sanitizeText } from "@/utils/sanitize-text";
 
 interface SourcePayload {
-	urls: string[];
 	chatId: string;
+	type: "files" | "links" | "text";
+	data: {
+		urls?: string[];
+		files?: File[];
+		text?: string;
+	};
 }
 
 export async function POST(request: Request) {
@@ -30,32 +35,13 @@ export async function POST(request: Request) {
 			);
 		}
 
-		const { urls, chatId }: SourcePayload = await request.json();
+		const { type, data, chatId }: SourcePayload = await request.json();
 
-		if (!urls || !Array.isArray(urls) || urls.length === 0) {
+		if (!type || !chatId) {
 			return Response.json(
 				{
 					success: false,
-					error: "URLs array is required",
-				} satisfies ApiResponse,
-				{ status: 400 },
-			);
-		}
-
-		const uniqueUrls = [...new Set(urls)].filter((url) => {
-			try {
-				new URL(url);
-				return true;
-			} catch {
-				return false;
-			}
-		});
-
-		if (uniqueUrls.length === 0) {
-			return Response.json(
-				{
-					success: false,
-					error: "No valid URLs provided",
+					error: "Type and chatId are required",
 				} satisfies ApiResponse,
 				{ status: 400 },
 			);
@@ -85,17 +71,6 @@ export async function POST(request: Request) {
 			getApiKey(session.user.id, "gemini"),
 		]);
 
-		if (!exaKey) {
-			return Response.json(
-				{
-					success: false,
-					error: "Exa API key is required for source processing",
-					requiresSetup: true,
-				} satisfies ApiResponse,
-				{ status: 400 },
-			);
-		}
-
 		if (!googleKey) {
 			return Response.json(
 				{
@@ -107,59 +82,223 @@ export async function POST(request: Request) {
 			);
 		}
 
-		await Promise.all(
-			uniqueUrls.map(async (url) => {
-				const { exa, googleAI } = createServices({
-					exaKey: exaKey!,
-					googleKey: googleKey!,
-				});
+		if (type === "links" && !exaKey) {
+			return Response.json(
+				{
+					success: false,
+					error: "Exa API key is required for source processing",
+					requiresSetup: true,
+				} satisfies ApiResponse,
+				{ status: 400 },
+			);
+		}
 
-				const result = await exa!.getContents([url], { text: true });
-				const exaResult = result.results?.[0];
-				if (!exaResult?.text) return;
-
-				if (chatTitle.length === 0 && !titleUpdated) {
-					titleUpdated = true;
-					await generateTitleFromResource({
-						resource: {
-							title: exaResult.title ?? "",
-							content: exaResult.text ?? "",
-						},
-						googleKey: googleKey ?? undefined,
-					})
-						.then(async (title) => {
-							await db
-								.update(chat)
-								.set({ title })
-								.where(
-									and(
-										eq(chat.id, chatId),
-										eq(chat.userId, session.user.id),
-									),
-								);
-						})
-						.catch(() => {});
+		switch (type) {
+			case "links": {
+				if (
+					!data.urls ||
+					!Array.isArray(data.urls) ||
+					data.urls.length === 0
+				) {
+					return Response.json(
+						{
+							success: false,
+							error: "URLs array is required for links type",
+						} satisfies ApiResponse,
+						{ status: 400 },
+					);
 				}
 
-				const cleanedText = sanitizeText(exaResult.text);
+				const uniqueUrls = [...new Set(data.urls)].filter((url) => {
+					try {
+						new URL(url);
+						return true;
+					} catch {
+						return false;
+					}
+				});
+
+				if (uniqueUrls.length === 0) {
+					return Response.json(
+						{
+							success: false,
+							error: "No valid URLs provided",
+						} satisfies ApiResponse,
+						{ status: 400 },
+					);
+				}
+
+				if (!exaKey) {
+					return Response.json(
+						{
+							success: false,
+							error: "Exa API key is required for source processing",
+							requiresSetup: true,
+						} satisfies ApiResponse,
+						{ status: 400 },
+					);
+				}
+
+				await Promise.all(
+					uniqueUrls.map(async (url) => {
+						const { exa, googleAI } = createServices({
+							exaKey: exaKey!,
+							googleKey: googleKey!,
+						});
+
+						const result = await exa!.getContents([url], {
+							text: true,
+						});
+						const exaResult = result.results?.[0];
+						if (!exaResult?.text) return;
+
+						if (chatTitle.length === 0 && !titleUpdated) {
+							titleUpdated = true;
+							await generateTitleFromResource({
+								resource: {
+									title: exaResult.title ?? "",
+									content: exaResult.text ?? "",
+								},
+								googleKey: googleKey ?? undefined,
+							})
+								.then(async (title) => {
+									await db
+										.update(chat)
+										.set({ title })
+										.where(
+											and(
+												eq(chat.id, chatId),
+												eq(
+													chat.userId,
+													session.user.id,
+												),
+											),
+										);
+								})
+								.catch(() => {});
+						}
+
+						const cleanedText = sanitizeText(exaResult.text);
+
+						const resourceId = randomUUID();
+
+						const resourcesData = {
+							id: resourceId,
+							chatId,
+							userId: session.user.id,
+							title: exaResult.title ?? "",
+							content: cleanedText,
+							status: "fetched",
+							type: "text",
+							source: url,
+							createdAt: new Date(),
+						} as Resource;
+
+						const chunks = createChunks(cleanedText);
+
+						const vectorResp = await googleAI.models.embedContent({
+							model: "gemini-embedding-001",
+							contents: chunks,
+							config: {
+								outputDimensionality: 1536,
+							},
+						});
+
+						const embeddingsArr = vectorResp.embeddings ?? [];
+						if (!embeddingsArr.length)
+							throw new Error("No embeddings returned");
+
+						const rows = embeddingsArr.map((e, i) => ({
+							id: randomUUID(),
+							resourceId,
+							chatId,
+							chunk: chunks[i],
+							position: i,
+							vector: normalizeVector(e.values ?? []),
+							createdAt: new Date(),
+							model: "gemini-embedding-001",
+						}));
+
+						await db.transaction(async (tx) => {
+							await tx.insert(resource).values(resourcesData);
+							await tx.insert(embedding).values(rows);
+							await tx
+								.update(resource)
+								.set({ status: "embedded" })
+								.where(eq(resource.id, resourceId));
+						});
+					}),
+				);
+				break;
+			}
+
+			case "files": {
+				// TODO: Implement file processing
+				if (
+					!data.files ||
+					!Array.isArray(data.files) ||
+					data.files.length === 0
+				) {
+					return Response.json(
+						{
+							success: false,
+							error: "Files array is required for files type",
+						} satisfies ApiResponse,
+						{ status: 400 },
+					);
+				}
+
+				// Placeholder for file processing logic
+				// TODO: Implement file processing
+				break;
+			}
+
+			case "text": {
+				if (
+					!data.text ||
+					typeof data.text !== "string" ||
+					data.text.trim().length === 0
+				) {
+					return Response.json(
+						{
+							success: false,
+							error: "Text content is required for text type",
+						} satisfies ApiResponse,
+						{ status: 400 },
+					);
+				}
+
+				const cleanedText = sanitizeText(data.text);
 
 				const resourceId = randomUUID();
+
+				const generatedTitle = await generateTitleFromResource({
+					resource: {
+						content: cleanedText,
+					},
+					googleKey: googleKey ?? undefined,
+				}).catch(() => "Text Document");
 
 				const resourcesData = {
 					id: resourceId,
 					chatId,
 					userId: session.user.id,
-					title: exaResult.title ?? "",
+					title: generatedTitle,
 					content: cleanedText,
 					status: "fetched",
 					type: "text",
-					source: url,
+					source: "user_input",
 					createdAt: new Date(),
 				} as Resource;
 
 				const chunks = createChunks(cleanedText);
 
-				const vectorResp = await googleAI.models.embedContent({
+				const { googleAI: googleAIForText } = createServices({
+					exaKey: exaKey!,
+					googleKey: googleKey!,
+				});
+
+				const vectorResp = await googleAIForText.models.embedContent({
 					model: "gemini-embedding-001",
 					contents: chunks,
 					config: {
@@ -171,16 +310,18 @@ export async function POST(request: Request) {
 				if (!embeddingsArr.length)
 					throw new Error("No embeddings returned");
 
-				const rows = embeddingsArr.map((e, i) => ({
-					id: randomUUID(),
-					resourceId,
-					chatId,
-					chunk: chunks[i],
-					position: i,
-					vector: normalizeVector(e.values ?? []),
-					createdAt: new Date(),
-					model: "gemini-embedding-001",
-				}));
+				const rows = embeddingsArr.map(
+					(e: { values?: number[] }, i: number) => ({
+						id: randomUUID(),
+						resourceId,
+						chatId,
+						chunk: chunks[i],
+						position: i,
+						vector: normalizeVector(e.values ?? []),
+						createdAt: new Date(),
+						model: "gemini-embedding-001",
+					}),
+				);
 
 				await db.transaction(async (tx) => {
 					await tx.insert(resource).values(resourcesData);
@@ -190,8 +331,19 @@ export async function POST(request: Request) {
 						.set({ status: "embedded" })
 						.where(eq(resource.id, resourceId));
 				});
-			}),
-		);
+				break;
+			}
+
+			default: {
+				return Response.json(
+					{
+						success: false,
+						error: "Invalid type. Must be 'files', 'links', or 'text'",
+					} satisfies ApiResponse,
+					{ status: 400 },
+				);
+			}
+		}
 
 		return Response.json(
 			{ success: true, message: "Source(s) added" } satisfies ApiResponse,
