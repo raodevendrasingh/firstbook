@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, Loader2, Upload, XIcon } from "lucide-react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -27,6 +27,7 @@ import {
 	type ResourceData,
 	resourceSchema,
 } from "@/lib/schema/app-schema";
+import type { FileData } from "@/types/data-types";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 
@@ -37,10 +38,6 @@ interface SourceDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSourcesAdded?: () => void;
-}
-
-interface FilesFormData {
-	files: File[];
 }
 
 interface TextFormData {
@@ -147,60 +144,245 @@ const FilesTab = ({
 	onSubmitSuccess: () => void;
 	onSubmitError: (error: Error) => void;
 }) => {
-	const form = useForm<FilesFormData>({
-		defaultValues: {
-			files: [],
-		},
-	});
+	const [files, setFiles] = useState<File[]>([]);
+	const [isDragOver, setIsDragOver] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const onSubmit = (values: FilesFormData) => {
-		// TODO: Implement file upload logic
-		addSourcesMutation.mutate(
-			{
-				type: "files",
-				data: { files: values.files },
-				chatId: slug,
-			},
-			{
-				onSuccess: onSubmitSuccess,
-				onError: onSubmitError,
-			},
-		);
+	const handleSubmitSuccess = () => {
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+		setFiles([]);
+		onSubmitSuccess();
+	};
+
+	const MAX_FILE_SIZE = 10 * 1024 * 1024;
+	const MAX_FILES = 5;
+	const ACCEPTED_TYPES = [
+		"application/pdf",
+		"application/msword",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"text/plain",
+		"text/markdown",
+	];
+
+	const validateFile = (file: File): string | null => {
+		if (!ACCEPTED_TYPES.includes(file.type)) {
+			return `File type ${file.type} is not supported. Please upload PDF, DOC, DOCX, TXT, or MD files.`;
+		}
+		if (file.size > MAX_FILE_SIZE) {
+			return `File ${file.name} is too large. Maximum size is 10MB.`;
+		}
+		return null;
+	};
+
+	const handleFileSelect = (selectedFiles: FileList | null) => {
+		if (!selectedFiles) return;
+
+		const newFiles = Array.from(selectedFiles);
+		const validFiles: File[] = [];
+		const errors: string[] = [];
+
+		for (const file of newFiles) {
+			const error = validateFile(file);
+			if (error) {
+				errors.push(error);
+			} else {
+				validFiles.push(file);
+			}
+		}
+
+		if (files.length + validFiles.length > MAX_FILES) {
+			errors.push(
+				`You can only upload up to ${MAX_FILES} files at once.`,
+			);
+			validFiles.splice(MAX_FILES - files.length);
+		}
+
+		if (validFiles.length > 0) {
+			setFiles((prev) => [...prev, ...validFiles]);
+		}
+
+		if (errors.length > 0) {
+			toast.error(errors[0]);
+		}
+	};
+
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragOver(true);
+	};
+
+	const handleDragLeave = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragOver(false);
+	};
+
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsDragOver(false);
+		handleFileSelect(e.dataTransfer.files);
+	};
+
+	const removeFile = (index: number) => {
+		setFiles((prev) => prev.filter((_, i) => i !== index));
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
+	const clearFiles = () => {
+		setFiles([]);
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
+	const onSubmit = async () => {
+		if (files.length === 0) {
+			toast.error("Please select files to upload");
+			return;
+		}
+
+		try {
+			const fileData: FileData[] = await Promise.all(
+				files.map(async (file) => {
+					return new Promise<FileData>((resolve, reject) => {
+						const reader = new FileReader();
+						reader.onload = () => {
+							const result = reader.result as string;
+							const base64 = result.split(",")[1];
+							resolve({
+								name: file.name,
+								size: file.size,
+								type: file.type,
+								data: base64,
+							});
+						};
+						reader.onerror = () =>
+							reject(
+								new Error(`Failed to read file ${file.name}`),
+							);
+						reader.readAsDataURL(file);
+					});
+				}),
+			);
+
+			addSourcesMutation.mutate(
+				{
+					type: "files",
+					data: { files: fileData },
+					chatId: slug,
+				},
+				{
+					onSuccess: handleSubmitSuccess,
+					onError: onSubmitError,
+				},
+			);
+		} catch {
+			toast.error("Failed to process files");
+		}
 	};
 
 	return (
-		<Form {...form}>
-			<form
-				onSubmit={form.handleSubmit(onSubmit)}
-				className="flex flex-col h-full"
+		<div className="flex flex-col h-full">
+			{/** biome-ignore lint/a11y/noStaticElementInteractions: <ignore> */}
+			<div
+				className={`flex-1 flex flex-col gap-2 items-center justify-center border-2 border-dashed rounded-2xl p-8 transition-colors ${
+					isDragOver
+						? "border-primary bg-primary/5"
+						: "border-muted-foreground/25 hover:border-muted-foreground/50"
+				}`}
+				onDragOver={handleDragOver}
+				onDragLeave={handleDragLeave}
+				onDrop={handleDrop}
 			>
-				<div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-2xl p-8">
-					<p className="text-muted-foreground text-center mb-4">
-						Drag and drop files here or click to browse
-					</p>
-					<Button
-						type="button"
-						variant="outline"
-						className="rounded-full"
-					>
-						Select Files
-					</Button>
+				<input
+					ref={fileInputRef}
+					type="file"
+					multiple
+					accept={ACCEPTED_TYPES.join(",")}
+					className="hidden"
+					onChange={(e) => handleFileSelect(e.target.files)}
+				/>
+
+				<Button
+					type="button"
+					variant="outline"
+					className="rounded-full"
+					onClick={() => fileInputRef.current?.click()}
+				>
+					<Upload size={16} />
+					Select Files
+				</Button>
+				<p className="text-muted-foreground text-center">
+					Drag and drop files here or click to browse
+				</p>
+				<p className="text-xs text-muted-foreground mt-2">
+					Supported: PDF, DOC, DOCX, TXT, MD (max 10MB each, 5 files)
+				</p>
+			</div>
+
+			{files.length > 0 && (
+				<div className="mt-4 space-y-2">
+					<div className="flex items-center justify-between">
+						<h4 className="text-sm font-medium">Selected Files</h4>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={clearFiles}
+							className="text-xs"
+						>
+							Clear All
+						</Button>
+					</div>
+					<div className="max-h-32 overflow-y-auto space-y-2">
+						{files.map((file, index) => (
+							<div
+								key={`${file.name}-${file.size}-${index}`}
+								className="flex items-center justify-between p-2 bg-muted rounded-lg"
+							>
+								<div className="flex items-center gap-2 min-w-0">
+									<span className="text-xs font-mono truncate">
+										{file.name}
+									</span>
+									<span className="text-xs text-muted-foreground">
+										{(file.size / 1024 / 1024).toFixed(1)}MB
+									</span>
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => removeFile(index)}
+									className="h-6 w-6 p-0"
+								>
+									<XIcon size={16} />
+								</Button>
+							</div>
+						))}
+					</div>
 				</div>
-				<div className="flex justify-end flex-shrink-0 mt-4">
-					<Button
-						type="submit"
-						disabled={addSourcesMutation.isPending}
-						className="w-28 rounded-full"
-					>
-						{addSourcesMutation.isPending ? (
-							<Loader2 className="animate-spin" />
-						) : (
-							"Submit"
-						)}
-					</Button>
-				</div>
-			</form>
-		</Form>
+			)}
+
+			<div className="flex justify-end flex-shrink-0 mt-4">
+				<Button
+					type="button"
+					disabled={
+						addSourcesMutation.isPending || files.length === 0
+					}
+					className="w-28 rounded-full"
+					onClick={onSubmit}
+				>
+					{addSourcesMutation.isPending ? (
+						<Loader2 className="animate-spin" />
+					) : (
+						"Submit"
+					)}
+				</Button>
+			</div>
+		</div>
 	);
 };
 
@@ -222,7 +404,6 @@ const TextTab = ({
 	});
 
 	const onSubmit = (values: TextFormData) => {
-		// TODO: Implement raw text logic
 		addSourcesMutation.mutate(
 			{
 				type: "text",
@@ -299,7 +480,9 @@ export function SourceDialog({
 	const handleSubmitSuccess = () => {
 		toast.success("Resources added");
 		onOpenChange(false);
-		onSourcesAdded?.();
+		setTimeout(() => {
+			onSourcesAdded?.();
+		}, 100);
 	};
 
 	const handleSubmitError = (error: Error) => {

@@ -27,7 +27,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 	const [webSearch, setWebSearch] = useState<boolean>(false);
 	const [title, setTitle] = useState<string>("");
 	const [sourceDialogOpen, setSourceDialogOpen] = useState<boolean>(false);
-	const [refreshSources, setRefreshSources] = useState<number>(0);
 	const [selectedResources, setSelectedResources] = useState<Resource[]>([]);
 
 	const { messages, sendMessage, status, regenerate, setMessages } = useChat({
@@ -154,6 +153,9 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							onSelectedResourcesChange={
 								handleSelectedResourcesChange
 							}
+							onNoSourcesDetected={() =>
+								setSourceDialogOpen(true)
+							}
 						/>
 					</TabsContent>
 				</div>
@@ -181,7 +183,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					className="hidden md:flex"
 					setSourceDialogOpen={setSourceDialogOpen}
 					chatId={slug}
-					refreshTrigger={refreshSources}
 					onNoSourcesDetected={() => setSourceDialogOpen(true)}
 					selectedResources={selectedResources}
 					onSelectedResourcesChange={handleSelectedResourcesChange}
@@ -192,7 +193,6 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 				open={sourceDialogOpen}
 				onOpenChange={setSourceDialogOpen}
 				slug={slug}
-				onSourcesAdded={() => setRefreshSources((prev) => prev + 1)}
 			/>
 		</div>
 	);

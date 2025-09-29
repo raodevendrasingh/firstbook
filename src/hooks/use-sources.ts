@@ -34,7 +34,12 @@ export function useAddSources() {
 			type: "files" | "links" | "text";
 			data: {
 				urls?: string[];
-				files?: File[];
+				files?: {
+					name: string;
+					size: number;
+					type: string;
+					data: string;
+				}[];
 				text?: string;
 			};
 			chatId: string;
@@ -81,6 +86,45 @@ export function useDeleteSource() {
 
 			const bodyText = (await response.text()).trim();
 			return bodyText.length > 0 ? JSON.parse(bodyText) : undefined;
+		},
+		onMutate: async ({ chatId, id }) => {
+			await queryClient.cancelQueries({
+				queryKey: sourcesKeys.sources(chatId),
+			});
+
+			const previousSources = queryClient.getQueryData(
+				sourcesKeys.sources(chatId),
+			);
+
+			queryClient.setQueryData(
+				sourcesKeys.sources(chatId),
+				(old: unknown) => {
+					const oldData = old as
+						| ApiResponse<{ resource: Resource[] }>
+						| undefined;
+					if (!oldData?.success || !oldData?.data?.resource)
+						return old;
+					return {
+						...oldData,
+						data: {
+							...oldData.data,
+							resource: oldData.data.resource.filter(
+								(r: Resource) => r.id !== id,
+							),
+						},
+					};
+				},
+			);
+
+			return { previousSources };
+		},
+		onError: (err, variables, context) => {
+			if (context?.previousSources) {
+				queryClient.setQueryData(
+					sourcesKeys.sources(variables.chatId),
+					context.previousSources,
+				);
+			}
 		},
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({
