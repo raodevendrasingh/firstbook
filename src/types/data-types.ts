@@ -71,3 +71,10 @@ export type SafeKeys = {
 	updatedAt: Date;
 	hasKey: boolean;
 };
+
+export interface FileData {
+	name: string;
+	size: number;
+	type: string;
+	data: string;
+}
