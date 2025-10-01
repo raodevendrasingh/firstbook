@@ -50,6 +50,13 @@
 			"when": 1759069968505,
 			"tag": "0006_dark_violations",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1759292619884,
+			"tag": "0007_lyrical_nekra",
+			"breakpoints": true
 		}
 	]
 }

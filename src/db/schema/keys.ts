@@ -6,6 +6,7 @@ export const providerEnum = pgEnum("provider", [
 	"openai",
 	"gemini",
 	"anthropic",
+	"r2",
 ]);
 
 export const keys = pgTable("keys", {
