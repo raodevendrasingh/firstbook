@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/drizzle";
 import { embedding, resource } from "@/db/schema";
 import { createServices } from "@/lib/ai/services";
+import { env } from "@/lib/env";
 import { getS3Client } from "@/lib/s3-client";
 import type { FileData, UserSession } from "@/types/data-types";
 import { createChunks } from "@/utils/createChunks";
@@ -27,11 +28,11 @@ export async function handleFilesUpload(
 			const fileName = `${fileId}_${fileData.name}`;
 			const filePath = `sources/${chatId}/${fileName}`;
 
-			const baseUrl = (process.env.R2_PUBLIC_ACCESS_URL ?? "").replace(
+			const baseUrl = (env.R2_PUBLIC_ACCESS_URL ?? "").replace(
 				/\/+$/,
 				"",
 			);
-			const bucketName = process.env.R2_PUBLIC_BUCKET ?? "firstbook";
+			const bucketName = env.R2_PUBLIC_BUCKET;
 			const sourceUrl = baseUrl
 				? `${baseUrl}/${bucketName}/${filePath}`
 				: `/${bucketName}/${filePath}`;

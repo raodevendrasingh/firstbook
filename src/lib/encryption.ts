@@ -5,6 +5,7 @@ import {
 	scrypt,
 } from "node:crypto";
 import { promisify } from "node:util";
+import { env } from "@/lib/env";
 
 const scryptAsync = promisify(scrypt);
 
@@ -13,7 +14,7 @@ const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 
 function getEncryptionKey(): string {
-	const key = process.env.API_KEY_ENCRYPTION_SECRET;
+	const key = env.API_KEY_ENCRYPTION_SECRET;
 	if (!key) {
 		throw new Error(
 			"API_KEY_ENCRYPTION_SECRET environment variable is required",

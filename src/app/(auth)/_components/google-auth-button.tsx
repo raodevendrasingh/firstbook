@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import { env } from "@/lib/env";
 
-const callbackURL = `${process.env.NEXT_PUBLIC_APP_URL}`;
+const callbackURL = env.NEXT_PUBLIC_APP_URL;
 
 export const GoogleAuthButton = () => {
 	const handleGoogleAuth = async () => {

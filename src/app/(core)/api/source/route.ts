@@ -4,6 +4,7 @@ import { db } from "@/db/drizzle";
 import { chat, type Resource, resource } from "@/db/schema";
 import { getApiKey } from "@/lib/api-keys";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import type { ApiResponse } from "@/types/api-handler";
 import type { FileData } from "@/types/data-types";
 import { handleFilesUpload } from "./handlers/files-handler";
@@ -69,7 +70,6 @@ export async function POST(request: Request) {
 			getApiKey(session.user.id, "gemini"),
 		]);
 
-		// Validate required API keys
 		if (!googleKey) {
 			return Response.json(
 				{
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 		}
 
 		if (type === "files") {
-			if (!process.env.R2_S3_API_ENDPOINT) {
+			if (!env.R2_S3_API_ENDPOINT) {
 				return Response.json(
 					{
 						success: false,
@@ -103,10 +103,7 @@ export async function POST(request: Request) {
 					{ status: 500 },
 				);
 			}
-			if (
-				!process.env.R2_ACCESS_KEY_ID ||
-				!process.env.R2_SECRET_ACCESS_KEY
-			) {
+			if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
 				return Response.json(
 					{
 						success: false,

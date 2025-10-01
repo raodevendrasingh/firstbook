@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/lib/env";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 
@@ -14,9 +15,7 @@ export const metadata: Metadata = {
 	title: "FirstbookLM",
 	description:
 		"An open, lightweight take on NotebookLM — focused on clarity, sources, and real-time context.",
-	metadataBase: new URL(
-		process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-	),
+	metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
 	alternates: {
 		canonical: "/",
 	},
