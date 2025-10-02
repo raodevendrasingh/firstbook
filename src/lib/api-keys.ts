@@ -232,3 +232,147 @@ export function clearAllKeyCache(): void {
 	keyCache.clear();
 	cacheTimestamps.clear();
 }
+
+export interface R2CredentialMeta {
+	id: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface R2Credentials {
+	endpoint: string;
+	accessKeyId: string;
+	secretAccessKey: string;
+	publicAccessUrl: string;
+	bucket: string;
+}
+
+export async function storeR2Credentials(
+	userId: string,
+	credentials: R2Credentials,
+): Promise<string> {
+	try {
+		await deleteR2Credentials(userId);
+
+		const credentialsJson = JSON.stringify(credentials);
+		const { ciphertext, iv, tag, salt } =
+			await encryptApiKey(credentialsJson);
+
+		const [result] = await db
+			.insert(keys)
+			.values({
+				id: randomUUID(),
+				userId,
+				provider: "r2",
+				keyCiphertext: ciphertext.toString("base64"),
+				keyIv: Buffer.concat([salt, iv]).toString("base64"),
+				keyTag: tag.toString("base64"),
+				algo: "AES-256-GCM",
+			})
+			.returning({ id: keys.id });
+
+		clearR2CredentialCache(userId);
+
+		return result.id;
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		throw new Error(`Failed to store R2 credentials: ${errorMessage}`);
+	}
+}
+
+export async function getR2Credentials(
+	userId: string,
+): Promise<R2Credentials | null> {
+	try {
+		const [keyRecord] = await db
+			.select()
+			.from(keys)
+			.where(and(eq(keys.userId, userId), eq(keys.provider, "r2")))
+			.limit(1);
+
+		if (!keyRecord) {
+			return null;
+		}
+
+		const keyIvBuffer = Buffer.from(keyRecord.keyIv, "base64");
+		const salt = keyIvBuffer.subarray(0, 16);
+		const iv = keyIvBuffer.subarray(16);
+
+		const decryptedJson = await decryptApiKey(
+			Buffer.from(keyRecord.keyCiphertext, "base64"),
+			iv,
+			Buffer.from(keyRecord.keyTag!, "base64"),
+			salt,
+		);
+
+		const credentials = JSON.parse(decryptedJson) as R2Credentials;
+
+		if (
+			credentials.endpoint &&
+			credentials.accessKeyId &&
+			credentials.secretAccessKey &&
+			credentials.publicAccessUrl &&
+			credentials.bucket
+		) {
+			return credentials;
+		}
+
+		return null;
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		throw new Error(`Failed to retrieve R2 credentials: ${errorMessage}`);
+	}
+}
+
+export async function getR2CredentialMeta(
+	userId: string,
+): Promise<R2CredentialMeta | null> {
+	try {
+		const [record] = await db
+			.select({
+				id: keys.id,
+				createdAt: keys.createdAt,
+				updatedAt: keys.updatedAt,
+			})
+			.from(keys)
+			.where(and(eq(keys.userId, userId), eq(keys.provider, "r2")))
+			.limit(1);
+
+		return record ?? null;
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		throw new Error(errorMessage);
+	}
+}
+
+export async function hasR2Credentials(userId: string): Promise<boolean> {
+	const credentials = await getR2Credentials(userId);
+	return credentials !== null;
+}
+
+export async function deleteR2Credentials(userId: string): Promise<boolean> {
+	try {
+		await db
+			.delete(keys)
+			.where(and(eq(keys.userId, userId), eq(keys.provider, "r2")));
+
+		clearR2CredentialCache(userId);
+		return true;
+	} catch (error) {
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		throw new Error(`Failed to delete R2 credentials: ${errorMessage}`);
+	}
+}
+
+function clearR2CredentialCache(userId: string): void {
+	for (const [cacheKey] of keyCache) {
+		if (cacheKey.startsWith(`${userId}:r2`)) {
+			keyCache.delete(cacheKey);
+			cacheTimestamps.delete(cacheKey);
+		}
+	}
+}

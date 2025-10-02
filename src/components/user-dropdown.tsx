@@ -18,7 +18,6 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import type { UserSession } from "@/types/data-types";
 import { loadAvatar } from "@/utils/avatar-utils";
-import { SettingsDialog } from "./settings-dialog";
 import { ThemeModeToggle } from "./theme-toggle";
 import { Skeleton } from "./ui/skeleton";
 
@@ -29,7 +28,6 @@ interface UserDropdownProps {
 export function UserDropdown({ className }: UserDropdownProps) {
 	const [session, setSession] = useState<UserSession | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
-	const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -92,11 +90,13 @@ export function UserDropdown({ className }: UserDropdownProps) {
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup className="flex flex-col gap-1">
-							<DropdownMenuItem
-								className="rounded-lg cursor-pointer"
-								onClick={() => setSettingsOpen(true)}
-							>
-								Settings
+							<DropdownMenuItem asChild>
+								<Link
+									href="/settings"
+									className="rounded-lg cursor-pointer"
+								>
+									Settings
+								</Link>
 							</DropdownMenuItem>
 							<ThemeModeToggle />
 						</DropdownMenuGroup>
@@ -114,10 +114,6 @@ export function UserDropdown({ className }: UserDropdownProps) {
 					<Button className="rounded-full">Sign In</Button>
 				</Link>
 			)}
-			<SettingsDialog
-				open={settingsOpen}
-				onOpenChange={setSettingsOpen}
-			/>
 		</>
 	);
 }

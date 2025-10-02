@@ -66,7 +66,7 @@ export type CostDollars = {
 
 export type SafeKeys = {
 	id: string;
-	provider: "exa" | "openai" | "gemini" | "anthropic";
+	provider: "exa" | "openai" | "gemini" | "anthropic" | "r2";
 	createdAt: Date;
 	updatedAt: Date;
 	hasKey: boolean;

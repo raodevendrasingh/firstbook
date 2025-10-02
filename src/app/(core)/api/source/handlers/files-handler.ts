@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/drizzle";
 import { embedding, resource } from "@/db/schema";
 import { createServices } from "@/lib/ai/services";
-import { env } from "@/lib/env";
-import { getS3Client } from "@/lib/s3-client";
+import {
+	getR2CredentialsForUser,
+	getR2PublicUrl,
+	uploadFileToR2,
+} from "@/lib/r2-service";
 import type { FileData, UserSession } from "@/types/data-types";
 import { createChunks } from "@/utils/createChunks";
 import { normalizeVector } from "@/utils/normalize-vector";
@@ -15,50 +17,52 @@ import {
 	generateTitleFromFilename,
 } from "@/utils/text-extractor";
 
+interface FileUploadResult {
+	successful: Array<{
+		fileName: string;
+		resourceId: string;
+	}>;
+	failed: Array<{
+		fileName: string;
+		error: string;
+	}>;
+}
+
 export async function handleFilesUpload(
 	session: UserSession,
 	data: { files: FileData[] },
 	chatId: string,
 	exaKey: string | null,
 	googleKey: string | null,
-) {
+): Promise<FileUploadResult> {
+	const r2Credentials = await getR2CredentialsForUser(session.user.id);
+
+	const result: FileUploadResult = {
+		successful: [],
+		failed: [],
+	};
+
 	for (const fileData of data.files) {
 		try {
 			const fileId = randomUUID();
 			const fileName = `${fileId}_${fileData.name}`;
 			const filePath = `sources/${chatId}/${fileName}`;
 
-			const baseUrl = (env.R2_PUBLIC_ACCESS_URL ?? "").replace(
-				/\/+$/,
-				"",
-			);
-			const bucketName = env.R2_PUBLIC_BUCKET;
-			const sourceUrl = baseUrl
-				? `${baseUrl}/${bucketName}/${filePath}`
-				: `/${bucketName}/${filePath}`;
+			const sourceUrl = getR2PublicUrl(r2Credentials, filePath);
 			const fileBuffer = Buffer.from(fileData.data, "base64");
 
-			const s3Client = getS3Client();
-			const uploadCommand = new PutObjectCommand({
-				Bucket: "firstbook",
-				Key: filePath,
-				Body: fileBuffer,
-				ContentType: fileData.type,
-				Metadata: {
+			await uploadFileToR2(
+				r2Credentials,
+				filePath,
+				fileBuffer,
+				fileData.type,
+				{
 					originalName: fileData.name,
 					uploadedAt: new Date().toISOString(),
 					chatId,
 					fileId,
 				},
-			});
-
-			try {
-				await s3Client.send(uploadCommand);
-			} catch (error) {
-				throw new Error(
-					`Failed to upload file ${fileData.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
-				);
-			}
+			);
 
 			let extractedText = "";
 			try {
@@ -72,7 +76,6 @@ export async function handleFilesUpload(
 			} catch {}
 
 			const title = generateTitleFromFilename(fileData.name);
-
 			const resourceId = randomUUID();
 
 			const resourcesData = {
@@ -138,6 +141,18 @@ export async function handleFilesUpload(
 			} else {
 				await db.insert(resource).values(resourcesData);
 			}
-		} catch {}
+
+			result.successful.push({
+				fileName: fileData.name,
+				resourceId,
+			});
+		} catch (error) {
+			result.failed.push({
+				fileName: fileData.name,
+				error: error instanceof Error ? error.message : "Unknown error",
+			});
+		}
 	}
+
+	return result;
 }

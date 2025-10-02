@@ -4,12 +4,16 @@ import { db } from "@/db/drizzle";
 import { chat, type Resource, resource } from "@/db/schema";
 import { getApiKey } from "@/lib/api-keys";
 import { auth } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { getR2CredentialsForUser } from "@/lib/r2-service";
 import type { ApiResponse } from "@/types/api-handler";
 import type { FileData } from "@/types/data-types";
 import { handleFilesUpload } from "./handlers/files-handler";
 import { handleLinksProcessing } from "./handlers/links-handler";
 import { handleTextProcessing } from "./handlers/text-handler";
+
+interface FileUploadResponseData {
+	warnings: string[];
+}
 
 interface SourcePayload {
 	chatId: string;
@@ -93,24 +97,16 @@ export async function POST(request: Request) {
 		}
 
 		if (type === "files") {
-			if (!env.R2_S3_API_ENDPOINT) {
+			try {
+				await getR2CredentialsForUser(session.user.id);
+			} catch {
 				return Response.json(
 					{
 						success: false,
-						error: "R2 S3 endpoint is not configured. Please configure R2 credentials in environment variables.",
+						error: "R2 credentials are not configured. Please configure your file upload credentials in settings or environment variables.",
 						requiresSetup: true,
 					} satisfies ApiResponse,
-					{ status: 500 },
-				);
-			}
-			if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
-				return Response.json(
-					{
-						success: false,
-						error: "R2 access credentials are not configured. Please configure R2 credentials in environment variables.",
-						requiresSetup: true,
-					} satisfies ApiResponse,
-					{ status: 500 },
+					{ status: 400 },
 				);
 			}
 		}
@@ -169,13 +165,42 @@ export async function POST(request: Request) {
 					);
 				}
 
-				await handleFilesUpload(
+				const uploadResult = await handleFilesUpload(
 					session,
 					{ files: data.files || [] },
 					chatId,
 					exaKey,
 					googleKey,
 				);
+
+				if (
+					uploadResult.successful.length === 0 &&
+					uploadResult.failed.length > 0
+				) {
+					return Response.json(
+						{
+							success: false,
+							error: `All file uploads failed: ${uploadResult.failed.map((f) => `${f.fileName}: ${f.error}`).join(", ")}`,
+						} satisfies ApiResponse,
+						{ status: 500 },
+					);
+				}
+
+				if (uploadResult.failed.length > 0) {
+					return Response.json(
+						{
+							success: true,
+							message: `Sources added with warnings. Successful: ${uploadResult.successful.length}, Failed: ${uploadResult.failed.length}`,
+							data: {
+								warnings: uploadResult.failed.map(
+									(f) => `${f.fileName}: ${f.error}`,
+								),
+							},
+						} satisfies ApiResponse<FileUploadResponseData>,
+						{ status: 200 },
+					);
+				}
+
 				break;
 			}
 
