@@ -12,8 +12,7 @@ export const searchResource = (
 	userKeys?: Keys,
 ) =>
 	tool({
-		description:
-			"Search the user's selected resources for context information",
+		description: `Search the user's selected resources for context information`,
 		inputSchema: z.object({
 			query: z.string().min(1).max(100).describe("The search query"),
 		}),

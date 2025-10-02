@@ -4,8 +4,10 @@ import { createServices } from "@/lib/ai/services";
 
 export function createWebSearchTool(exaKey?: string) {
 	return tool({
-		description: `Search the web for up-to-date information, use this tool only if the user asks about real-time events 
-		or very recent data that may not exist in stored resources.`,
+		description: `Search the web for strictly real-time or up-to-date information. 
+			Always prefer using stored resources first. 
+			Only use this tool if the query is explicitly about current events, recent updates, or information that could not exist in the provided resources. 
+			Do not use it for general knowledge or off-topic questions — the notebook remains the primary source of truth.`,
 		inputSchema: z.object({
 			query: z.string().min(1).max(100).describe("The search query"),
 		}),
