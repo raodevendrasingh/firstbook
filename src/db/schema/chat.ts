@@ -44,6 +44,7 @@ export const resource = pgTable(
 		id: text("id").primaryKey().notNull(),
 		title: text("title").notNull(),
 		content: text("content"),
+		summary: text("summary"),
 		type: text("type", { enum: ["text", "files", "links"] })
 			.notNull()
 			.default("text"),

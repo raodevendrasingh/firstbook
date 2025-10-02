@@ -10,6 +10,7 @@ import {
 } from "@/lib/r2-service";
 import type { FileData, UserSession } from "@/types/data-types";
 import { createChunks } from "@/utils/createChunks";
+import { generateSummaryFromContent } from "@/utils/generate-summary-from-content";
 import { normalizeVector } from "@/utils/normalize-vector";
 import {
 	cleanExtractedText,
@@ -65,6 +66,7 @@ export async function handleFilesUpload(
 			);
 
 			let extractedText = "";
+			let summary = "";
 			try {
 				extractedText = await extractTextFromFile(
 					fileBuffer,
@@ -72,6 +74,10 @@ export async function handleFilesUpload(
 				);
 				if (extractedText) {
 					extractedText = cleanExtractedText(extractedText);
+					summary = await generateSummaryFromContent({
+						content: extractedText,
+						googleKey: googleKey ?? undefined,
+					});
 				}
 			} catch {}
 
@@ -84,6 +90,7 @@ export async function handleFilesUpload(
 				userId: session.user.id,
 				title,
 				content: extractedText || title,
+				summary,
 				status: "fetched" as const,
 				type: "files" as const,
 				source: sourceUrl,

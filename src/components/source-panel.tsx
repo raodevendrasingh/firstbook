@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	ArrowLeftIcon,
 	ExternalLinkIcon,
 	FileTextIcon,
 	LinkIcon,
@@ -44,6 +45,8 @@ export const SourcePanel = ({
 }: SourcePanelProps) => {
 	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+	const [selectedResourceDetail, setSelectedResourceDetail] =
+		useState<Resource | null>(null);
 
 	const { data: sourcesData, isLoading } = useFetchSources(chatId);
 	const deleteSourceMutation = useDeleteSource();
@@ -66,7 +69,6 @@ export const SourcePanel = ({
 			),
 		);
 
-		// Initialize selection for first load
 		if (resources.length > 0 && !hasInitializedSelection) {
 			onSelectedResourcesChange(resources);
 			setHasInitializedSelection(true);
@@ -74,7 +76,6 @@ export const SourcePanel = ({
 			return;
 		}
 
-		// Auto-select newly added resources
 		if (newResourceIds.size > 0) {
 			const newResources = resources.filter((r) =>
 				newResourceIds.has(r.id),
@@ -82,9 +83,7 @@ export const SourcePanel = ({
 			onSelectedResourcesChange([...selectedResources, ...newResources]);
 		}
 
-		// Update previous resource IDs
 		previousResourceIds.current = currentResourceIds;
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		resources,
 		hasInitializedSelection,
@@ -109,10 +108,6 @@ export const SourcePanel = ({
 
 	const handleDelete = (id: string) => {
 		if (!chatId) return;
-
-		// Optimistically remove the item from selected resources if it was selected
-		// We need to get the current selected resources from the parent component
-		// For now, we'll let the query invalidation handle the UI update
 
 		setDeletingIds((prev) => {
 			const next = new Set(prev);
@@ -145,200 +140,294 @@ export const SourcePanel = ({
 	return (
 		<div
 			className={cn(
-				"relative flex flex-col md:max-w-xs lg:max-w-sm h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-xl overflow-hidden",
+				"relative flex flex-col h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.5rem)] bg-background border border-border w-full rounded-xl overflow-hidden",
+				selectedResourceDetail
+					? "md:max-w-md lg:max-w-md"
+					: "md:max-w-xs lg:max-w-sm",
 				className,
 			)}
 		>
-			<div className="flex flex-1 h-full min-h-0 flex-col gap-2 p-2 overflow-y-auto w-full">
-				<Button
-					variant="outline"
-					className="hidden md:flex rounded-full mb-2"
-					onClick={() => setSourceDialogOpen(true)}
-				>
-					<PlusIcon className="size-4" />
-					Add Sources
-				</Button>
-				{isLoading ? (
-					<div className="flex items-center justify-center h-32 gap-2">
-						<div className="text-sm text-muted-foreground">
-							Loading sources
-						</div>
-						<Loader2 className="animate-spin size-4" />
-					</div>
-				) : resources && resources.length > 0 ? (
-					<>
-						<div className="mb-2 flex items-center justify-between px-3 py-1 rounded-lg">
-							<span className="text-sm font-medium text-muted-foreground">
-								Select all sources
-							</span>
-							<Checkbox
-								checked={resources.every((res) =>
-									selectedResources.some(
-										(selected) => selected.id === res.id,
-									),
+			{selectedResourceDetail ? (
+				<div className="flex flex-1 h-full min-h-0 flex-col gap-4 p-4 overflow-y-auto w-full">
+					<Button
+						variant="ghost"
+						className="w-fit rounded-full"
+						onClick={() => setSelectedResourceDetail(null)}
+					>
+						<ArrowLeftIcon className="size-4 mr-2" />
+						Back to sources
+					</Button>
+
+					<div className="flex flex-col gap-4">
+						<div className="flex items-center justify-between gap-3">
+							<div className="p-2 bg-accent rounded-lg">
+								{selectedResourceDetail.type === "links" ? (
+									<LinkIcon className="size-5 text-primary" />
+								) : selectedResourceDetail.type === "files" ? (
+									<FileTextIcon className="size-5 text-primary" />
+								) : (
+									<TextInitial className="size-5 text-primary" />
 								)}
-								onCheckedChange={(checked) => {
-									if (checked) {
-										onSelectedResourcesChange(resources);
-									} else {
-										onSelectedResourcesChange([]);
-									}
-								}}
-								className="cursor-pointer"
-							/>
-						</div>
-						{resources.map((res) => (
-							<div key={res.id} className="flex flex-col gap-2">
-								<div className="group py-1 px-3 h-10 rounded-lg bg-accent/80 flex items-center gap-3 hover:bg-accent transition-colors relative">
-									<div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
-										<span
-											className={cn(
-												"transition-opacity text-primary rounded-md p-1",
-												openDropdownId === res.id
-													? "opacity-0"
-													: "opacity-100 group-hover:opacity-0",
-											)}
-										>
-											{res.type === "links" ? (
-												<LinkIcon className="size-4" />
-											) : res.type === "files" ? (
-												<FileTextIcon className="size-4" />
-											) : (
-												<TextInitial className="size-4" />
-											)}
-										</span>
-										<span
-											className={`absolute inset-0 transition-opacity ${
-												openDropdownId === res.id
-													? "opacity-100"
-													: "opacity-0 group-hover:opacity-100"
-											}`}
-										>
-											<DropdownMenu
-												onOpenChange={(open) => {
-													setOpenDropdownId(
-														open ? res.id : null,
-													);
-												}}
-											>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="h-4 w-4 p-0 cursor-pointer hover:bg-background/50"
-													>
-														<MoreVerticalIcon className="h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent
-													align="start"
-													className="w-48 rounded-xl"
-												>
-													<DropdownMenuItem
-														onClick={() => {
-															window.open(
-																res.source ??
-																	"",
-																"_blank",
-															);
-														}}
-														className="cursor-pointer rounded-lg"
-													>
-														<ExternalLinkIcon className="h-4 w-4 mr-2" />
-														Open Resource
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => {
-															handleDelete(
-																res.id,
-															);
-														}}
-														className="cursor-pointer text-destructive focus:text-destructive rounded-lg"
-														variant="destructive"
-													>
-														{deletingIds.has(
-															res.id,
-														) ? (
-															<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-														) : (
-															<TrashIcon className="h-4 w-4 mr-2" />
-														)}
-														Delete Resource
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</span>
-									</div>
-
-									<span
-										title={res.title}
-										className="flex flex-col items-start min-w-0 flex-1 max-h-10 overflow-hidden cursor-default"
-									>
-										<p className="text-sm font-medium line-clamp-1">
-											{res.title}
-										</p>
-									</span>
-
-									<Checkbox
-										checked={selectedResources.some(
-											(selected) =>
-												selected.id === res.id,
-										)}
-										onCheckedChange={() => {
-											const isCurrentlySelected =
-												selectedResources.some(
-													(selected) =>
-														selected.id === res.id,
-												);
-
-											const newResources =
-												isCurrentlySelected
-													? selectedResources.filter(
-															(selected) =>
-																selected.id !==
-																res.id,
-														)
-													: [
-															...selectedResources,
-															res,
-														];
-
-											onSelectedResourcesChange(
-												newResources,
+							</div>
+							<div className="flex-1 min-w-0">
+								<h2 className="text-xl font-semibold break-words">
+									{selectedResourceDetail.title}
+								</h2>
+							</div>
+							{(selectedResourceDetail.type === "links" ||
+								selectedResourceDetail.type === "files") &&
+								selectedResourceDetail.source && (
+									<Button
+										variant="outline"
+										size="icon"
+										className="rounded-full"
+										onClick={() => {
+											window.open(
+												selectedResourceDetail.source ??
+													"",
+												"_blank",
 											);
 										}}
-										className="cursor-pointer"
-									/>
+									>
+										<ExternalLinkIcon className="size-4" />
+									</Button>
+								)}
+						</div>
+
+						{selectedResourceDetail.summary && (
+							<div className="flex flex-col gap-2">
+								<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+									Summary
+								</h3>
+								<div className="p-4 bg-accent/50 rounded-lg">
+									<p className="text-sm leading-relaxed whitespace-pre-wrap">
+										{selectedResourceDetail.summary}
+									</p>
 								</div>
 							</div>
-						))}
-					</>
-				) : (
-					<div className="flex flex-col gap-3 mt-48 items-center justify-center p-2">
-						<ScrollText
-							size={48}
-							className="text-muted-foreground"
-						/>
-						<span className="flex flex-col gap-1">
-							<p className="text-base text-center font-medium text-muted-foreground">
-								Saved resources will appear here
-							</p>
-							<p className="text-sm text-center text-muted-foreground">
-								Click Add source button to add web sources to
-								your notebook
-							</p>
-						</span>
+						)}
+
+						{selectedResourceDetail.content && (
+							<div className="flex flex-col gap-2">
+								<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+									Content
+								</h3>
+								<div className="p-4 bg-accent/30 rounded-lg">
+									<p className="text-sm leading-relaxed whitespace-pre-wrap">
+										{selectedResourceDetail.content}
+									</p>
+								</div>
+							</div>
+						)}
 					</div>
-				)}
-				<Button
-					variant="default"
-					className="flex md:hidden rounded-full w-fit mx-auto mt-auto h-10 sticky bottom-16"
-					onClick={() => setSourceDialogOpen(true)}
-				>
-					<PlusIcon className="size-4" />
-					Add Sources
-				</Button>
-			</div>
+				</div>
+			) : (
+				<div className="flex flex-1 h-full min-h-0 flex-col gap-2 p-2 overflow-y-auto w-full">
+					<Button
+						variant="outline"
+						className="hidden md:flex rounded-full mb-2"
+						onClick={() => setSourceDialogOpen(true)}
+					>
+						<PlusIcon className="size-4" />
+						Add Sources
+					</Button>
+					{isLoading ? (
+						<div className="flex items-center justify-center h-32 gap-2">
+							<div className="text-sm text-muted-foreground">
+								Loading sources
+							</div>
+							<Loader2 className="animate-spin size-4" />
+						</div>
+					) : resources && resources.length > 0 ? (
+						<>
+							<div className="mb-2 flex items-center justify-between px-3 py-1 rounded-lg">
+								<span className="text-sm font-medium text-muted-foreground">
+									Select all sources
+								</span>
+								<Checkbox
+									checked={resources.every((res) =>
+										selectedResources.some(
+											(selected) =>
+												selected.id === res.id,
+										),
+									)}
+									onCheckedChange={(checked) => {
+										if (checked) {
+											onSelectedResourcesChange(
+												resources,
+											);
+										} else {
+											onSelectedResourcesChange([]);
+										}
+									}}
+									className="cursor-pointer"
+								/>
+							</div>
+							{resources.map((res) => (
+								<div
+									key={res.id}
+									className="flex flex-col gap-2"
+								>
+									<div className="group py-1 px-3 h-10 rounded-lg bg-accent/80 flex items-center gap-3 hover:bg-accent transition-colors relative">
+										<div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
+											<span
+												className={cn(
+													"transition-opacity text-primary rounded-md p-1",
+													openDropdownId === res.id
+														? "opacity-0"
+														: "opacity-100 group-hover:opacity-0",
+												)}
+											>
+												{res.type === "links" ? (
+													<LinkIcon className="size-4" />
+												) : res.type === "files" ? (
+													<FileTextIcon className="size-4" />
+												) : (
+													<TextInitial className="size-4" />
+												)}
+											</span>
+											<span
+												className={`absolute inset-0 transition-opacity ${
+													openDropdownId === res.id
+														? "opacity-100"
+														: "opacity-0 group-hover:opacity-100"
+												}`}
+											>
+												<DropdownMenu
+													onOpenChange={(open) => {
+														setOpenDropdownId(
+															open
+																? res.id
+																: null,
+														);
+													}}
+												>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="h-4 w-4 p-0 cursor-pointer hover:bg-background/50"
+														>
+															<MoreVerticalIcon className="h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent
+														align="start"
+														className="w-48 rounded-xl"
+													>
+														<DropdownMenuItem
+															onClick={() => {
+																window.open(
+																	res.source ??
+																		"",
+																	"_blank",
+																);
+															}}
+															className="cursor-pointer rounded-lg"
+														>
+															<ExternalLinkIcon className="h-4 w-4 mr-2" />
+															Open Resource
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => {
+																handleDelete(
+																	res.id,
+																);
+															}}
+															className="cursor-pointer text-destructive focus:text-destructive rounded-lg"
+															variant="destructive"
+														>
+															{deletingIds.has(
+																res.id,
+															) ? (
+																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+															) : (
+																<TrashIcon className="h-4 w-4 mr-2" />
+															)}
+															Delete Resource
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</span>
+										</div>
+
+										<button
+											type="button"
+											title={res.title}
+											className="flex flex-col items-start min-w-0 flex-1 max-h-10 overflow-hidden cursor-pointer hover:underline text-left"
+											onClick={() =>
+												setSelectedResourceDetail(res)
+											}
+										>
+											<p className="text-sm font-medium line-clamp-1">
+												{res.title}
+											</p>
+										</button>
+
+										<Checkbox
+											checked={selectedResources.some(
+												(selected) =>
+													selected.id === res.id,
+											)}
+											onCheckedChange={() => {
+												const isCurrentlySelected =
+													selectedResources.some(
+														(selected) =>
+															selected.id ===
+															res.id,
+													);
+
+												const newResources =
+													isCurrentlySelected
+														? selectedResources.filter(
+																(selected) =>
+																	selected.id !==
+																	res.id,
+															)
+														: [
+																...selectedResources,
+																res,
+															];
+
+												onSelectedResourcesChange(
+													newResources,
+												);
+											}}
+											className="cursor-pointer"
+										/>
+									</div>
+								</div>
+							))}
+						</>
+					) : (
+						<div className="flex flex-col gap-3 mt-48 items-center justify-center p-2">
+							<ScrollText
+								size={48}
+								className="text-muted-foreground"
+							/>
+							<span className="flex flex-col gap-1">
+								<p className="text-base text-center font-medium text-muted-foreground">
+									Saved resources will appear here
+								</p>
+								<p className="text-sm text-center text-muted-foreground">
+									Click Add source button to add web sources
+									to your notebook
+								</p>
+							</span>
+						</div>
+					)}
+					<Button
+						variant="default"
+						className="flex md:hidden rounded-full w-fit mx-auto mt-auto h-10 sticky bottom-16"
+						onClick={() => setSourceDialogOpen(true)}
+					>
+						<PlusIcon className="size-4" />
+						Add Sources
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 };

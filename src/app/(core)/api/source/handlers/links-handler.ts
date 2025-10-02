@@ -42,7 +42,10 @@ export async function handleLinksProcessing(
 				googleKey: googleKey!,
 			});
 
-			const result = await exa!.getContents([url], { text: true });
+			const result = await exa!.getContents([url], {
+				text: true,
+				summary: true,
+			});
 			const exaResult = result.results?.[0];
 			if (!exaResult?.text) return;
 
@@ -78,6 +81,7 @@ export async function handleLinksProcessing(
 				userId: session.user.id,
 				title: exaResult.title ?? "",
 				content: cleanedText,
+				summary: exaResult.summary ?? "",
 				status: "fetched" as const,
 				type: "links" as const,
 				source: url,
@@ -86,6 +90,9 @@ export async function handleLinksProcessing(
 					url,
 					title: exaResult.title,
 					extractedTextLength: cleanedText.length,
+					publishedDate: exaResult.publishedDate ?? "",
+					contentLength: cleanedText.length,
+					summaryLength: exaResult.summary?.length ?? 0,
 				},
 				createdAt: new Date(),
 			} as Resource;

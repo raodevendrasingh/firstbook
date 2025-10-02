@@ -5,6 +5,7 @@ import { embedding, type Resource, resource } from "@/db/schema";
 import { createServices } from "@/lib/ai/services";
 import type { UserSession } from "@/types/data-types";
 import { createChunks } from "@/utils/createChunks";
+import { generateSummaryFromContent } from "@/utils/generate-summary-from-content";
 import { generateTitleFromResource } from "@/utils/generate-title-from-resource";
 import { normalizeVector } from "@/utils/normalize-vector";
 import { sanitizeText } from "@/utils/sanitize-text";
@@ -27,12 +28,18 @@ export async function handleTextProcessing(
 		googleKey: googleKey ?? undefined,
 	}).catch(() => "Text Document");
 
+	const summary = await generateSummaryFromContent({
+		content: cleanedText,
+		googleKey: googleKey ?? undefined,
+	});
+
 	const resourcesData = {
 		id: resourceId,
 		chatId,
 		userId: session.user.id,
 		title: generatedTitle,
 		content: cleanedText,
+		summary,
 		status: "fetched" as const,
 		type: "text" as const,
 		source: "user_input",
