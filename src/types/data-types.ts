@@ -78,3 +78,18 @@ export interface FileData {
 	type: string;
 	data: string;
 }
+
+export type ResourceMetadata = {
+	inputMethod?: "raw_text";
+	textLength?: number;
+	url?: string;
+	title?: string;
+	extractedTextLength?: number;
+	publishedDate?: string;
+	contentLength?: number;
+	summaryLength?: number;
+	fileName?: string;
+	fileSize?: number;
+	mimeType?: string;
+	hasTextContent?: boolean;
+};

@@ -3,17 +3,15 @@
 import {
 	ArrowLeftIcon,
 	ExternalLinkIcon,
-	FileTextIcon,
-	LinkIcon,
 	Loader2,
 	MoreVerticalIcon,
 	PlusIcon,
 	ScrollText,
-	TextInitial,
 	TrashIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { FilterButtons } from "@/components/filter-buttons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -25,6 +23,7 @@ import {
 import type { Resource } from "@/db/schema";
 import { useDeleteSource, useFetchSources } from "@/hooks/use-sources";
 import { cn } from "@/lib/utils";
+import { getResourceIcon } from "@/utils/get-resource-icon";
 
 interface SourcePanelProps {
 	setSourceDialogOpen: (open: boolean) => void;
@@ -47,6 +46,7 @@ export const SourcePanel = ({
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 	const [selectedResourceDetail, setSelectedResourceDetail] =
 		useState<Resource | null>(null);
+	const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
 	const { data: sourcesData, isLoading } = useFetchSources(chatId);
 	const deleteSourceMutation = useDeleteSource();
@@ -54,6 +54,33 @@ export const SourcePanel = ({
 	const resources = sourcesData?.success
 		? sourcesData.data?.resource || []
 		: [];
+
+	const uniqueResourceTypes = Array.from(
+		new Set(resources.map((r) => r.type)),
+	);
+	const fileMimeTypes = Array.from(
+		new Set(
+			resources
+				.filter((r) => r.type === "files")
+				.map((r) => r.metadata?.mimeType)
+				.filter((mimeType): mimeType is string => Boolean(mimeType)),
+		),
+	);
+
+	const filteredResources = activeFilter
+		? resources.filter((res) => {
+				if (activeFilter === "files") return res.type === "files";
+				if (activeFilter === "links") return res.type === "links";
+				if (activeFilter === "text") return res.type === "text";
+				if (
+					res.type === "files" &&
+					res.metadata?.mimeType === activeFilter
+				) {
+					return true;
+				}
+				return false;
+			})
+		: resources;
 
 	const [hasInitializedSelection, setHasInitializedSelection] =
 		useState(false);
@@ -159,18 +186,21 @@ export const SourcePanel = ({
 					</Button>
 
 					<div className="flex flex-col gap-4">
-						<div className="flex items-center justify-between gap-3">
+						<div className="flex items-center justify-between gap-3	">
 							<div className="p-2 bg-accent rounded-lg">
-								{selectedResourceDetail.type === "links" ? (
-									<LinkIcon className="size-5 text-primary" />
-								) : selectedResourceDetail.type === "files" ? (
-									<FileTextIcon className="size-5 text-primary" />
-								) : (
-									<TextInitial className="size-5 text-primary" />
-								)}
+								{selectedResourceDetail.type === "files"
+									? getResourceIcon(
+											selectedResourceDetail.metadata
+												?.mimeType || "files",
+											"size-8",
+										)
+									: getResourceIcon(
+											selectedResourceDetail.type,
+											"size-8",
+										)}
 							</div>
 							<div className="flex-1 min-w-0">
-								<h2 className="text-xl font-semibold break-words">
+								<h2 className="text-lg font-semibold break-words">
 									{selectedResourceDetail.title}
 								</h2>
 							</div>
@@ -231,6 +261,14 @@ export const SourcePanel = ({
 						<PlusIcon className="size-4" />
 						Add Sources
 					</Button>
+					{resources.length > 0 && (
+						<FilterButtons
+							activeFilter={activeFilter}
+							onFilterChange={setActiveFilter}
+							fileMimeTypes={fileMimeTypes}
+							uniqueResourceTypes={uniqueResourceTypes}
+						/>
+					)}
 					{isLoading ? (
 						<div className="flex items-center justify-center h-32 gap-2">
 							<div className="text-sm text-muted-foreground">
@@ -239,168 +277,209 @@ export const SourcePanel = ({
 							<Loader2 className="animate-spin size-4" />
 						</div>
 					) : resources && resources.length > 0 ? (
-						<>
-							<div className="mb-2 flex items-center justify-between px-3 py-1 rounded-lg">
-								<span className="text-sm font-medium text-muted-foreground">
-									Select all sources
-								</span>
-								<Checkbox
-									checked={resources.every((res) =>
-										selectedResources.some(
-											(selected) =>
-												selected.id === res.id,
-										),
-									)}
-									onCheckedChange={(checked) => {
-										if (checked) {
-											onSelectedResourcesChange(
-												resources,
-											);
-										} else {
-											onSelectedResourcesChange([]);
-										}
-									}}
-									className="cursor-pointer"
-								/>
-							</div>
-							{resources.map((res) => (
-								<div
-									key={res.id}
-									className="flex flex-col gap-2"
-								>
-									<div className="group py-1 px-3 h-10 rounded-lg bg-accent/80 flex items-center gap-3 hover:bg-accent transition-colors relative">
-										<div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
-											<span
-												className={cn(
-													"transition-opacity text-primary rounded-md p-1",
-													openDropdownId === res.id
-														? "opacity-0"
-														: "opacity-100 group-hover:opacity-0",
-												)}
-											>
-												{res.type === "links" ? (
-													<LinkIcon className="size-4" />
-												) : res.type === "files" ? (
-													<FileTextIcon className="size-4" />
-												) : (
-													<TextInitial className="size-4" />
-												)}
-											</span>
-											<span
-												className={`absolute inset-0 transition-opacity ${
-													openDropdownId === res.id
-														? "opacity-100"
-														: "opacity-0 group-hover:opacity-100"
-												}`}
-											>
-												<DropdownMenu
-													onOpenChange={(open) => {
-														setOpenDropdownId(
-															open
-																? res.id
-																: null,
-														);
-													}}
-												>
-													<DropdownMenuTrigger
-														asChild
-													>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-4 w-4 p-0 cursor-pointer hover:bg-background/50"
-														>
-															<MoreVerticalIcon className="h-4 w-4" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent
-														align="start"
-														className="w-48 rounded-xl"
-													>
-														<DropdownMenuItem
-															onClick={() => {
-																window.open(
-																	res.source ??
-																		"",
-																	"_blank",
-																);
-															}}
-															className="cursor-pointer rounded-lg"
-														>
-															<ExternalLinkIcon className="h-4 w-4 mr-2" />
-															Open Resource
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onClick={() => {
-																handleDelete(
-																	res.id,
-																);
-															}}
-															className="cursor-pointer text-destructive focus:text-destructive rounded-lg"
-															variant="destructive"
-														>
-															{deletingIds.has(
-																res.id,
-															) ? (
-																<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-															) : (
-																<TrashIcon className="h-4 w-4 mr-2" />
-															)}
-															Delete Resource
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</span>
-										</div>
-
-										<button
-											type="button"
-											title={res.title}
-											className="flex flex-col items-start min-w-0 flex-1 max-h-10 overflow-hidden cursor-pointer hover:underline text-left"
-											onClick={() =>
-												setSelectedResourceDetail(res)
-											}
-										>
-											<p className="text-sm font-medium line-clamp-1">
-												{res.title}
-											</p>
-										</button>
-
-										<Checkbox
-											checked={selectedResources.some(
-												(selected) =>
-													selected.id === res.id,
-											)}
-											onCheckedChange={() => {
-												const isCurrentlySelected =
-													selectedResources.some(
-														(selected) =>
-															selected.id ===
-															res.id,
-													);
-
-												const newResources =
-													isCurrentlySelected
-														? selectedResources.filter(
-																(selected) =>
-																	selected.id !==
-																	res.id,
-															)
-														: [
-																...selectedResources,
-																res,
-															];
-
+						filteredResources.length > 0 ? (
+							<>
+								<div className="mb-2 flex items-center justify-between px-3 py-1 rounded-lg">
+									<span className="text-sm font-medium text-muted-foreground">
+										Select all sources
+									</span>
+									<Checkbox
+										checked={filteredResources.every(
+											(res) =>
+												selectedResources.some(
+													(selected) =>
+														selected.id === res.id,
+												),
+										)}
+										onCheckedChange={(checked) => {
+											if (checked) {
 												onSelectedResourcesChange(
-													newResources,
+													filteredResources,
 												);
-											}}
-											className="cursor-pointer"
-										/>
-									</div>
+											} else {
+												const filteredIds = new Set(
+													filteredResources.map(
+														(r) => r.id,
+													),
+												);
+												onSelectedResourcesChange(
+													selectedResources.filter(
+														(res) =>
+															!filteredIds.has(
+																res.id,
+															),
+													),
+												);
+											}
+										}}
+										className="cursor-pointer"
+									/>
 								</div>
-							))}
-						</>
+								{filteredResources.map((res) => (
+									<div
+										key={res.id}
+										className="flex flex-col gap-2"
+									>
+										<div className="group py-1 px-3 h-10 rounded-lg bg-accent/80 flex items-center gap-3 hover:bg-accent transition-colors relative">
+											<div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
+												<span
+													className={cn(
+														"transition-opacity text-primary rounded-md p-1",
+														openDropdownId ===
+															res.id
+															? "opacity-0"
+															: "opacity-100 group-hover:opacity-0",
+													)}
+												>
+													{res.type === "files"
+														? getResourceIcon(
+																res.metadata
+																	?.mimeType ||
+																	"files",
+																"size-5",
+															)
+														: getResourceIcon(
+																res.type,
+																"size-5",
+															)}
+												</span>
+												<span
+													className={`absolute inset-0 transition-opacity ${
+														openDropdownId ===
+														res.id
+															? "opacity-100"
+															: "opacity-0 group-hover:opacity-100"
+													}`}
+												>
+													<DropdownMenu
+														onOpenChange={(
+															open,
+														) => {
+															setOpenDropdownId(
+																open
+																	? res.id
+																	: null,
+															);
+														}}
+													>
+														<DropdownMenuTrigger
+															asChild
+														>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="h-4 w-4 p-0 cursor-pointer hover:bg-background/50 flex items-center justify-center"
+															>
+																<MoreVerticalIcon className="h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent
+															align="start"
+															className="w-48 rounded-xl"
+														>
+															<DropdownMenuItem
+																onClick={() => {
+																	window.open(
+																		res.source ??
+																			"",
+																		"_blank",
+																	);
+																}}
+																className="cursor-pointer rounded-lg"
+															>
+																<ExternalLinkIcon className="h-4 w-4 mr-2" />
+																Open Resource
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => {
+																	handleDelete(
+																		res.id,
+																	);
+																}}
+																className="cursor-pointer text-destructive focus:text-destructive rounded-lg"
+																variant="destructive"
+															>
+																{deletingIds.has(
+																	res.id,
+																) ? (
+																	<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+																) : (
+																	<TrashIcon className="h-4 w-4 mr-2" />
+																)}
+																Delete Resource
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</span>
+											</div>
+
+											<button
+												type="button"
+												title={res.title}
+												className="flex flex-col items-start min-w-0 flex-1 max-h-10 overflow-hidden cursor-pointer hover:underline text-left"
+												onClick={() =>
+													setSelectedResourceDetail(
+														res,
+													)
+												}
+											>
+												<p className="text-sm font-medium line-clamp-1">
+													{res.title}
+												</p>
+											</button>
+
+											<Checkbox
+												checked={selectedResources.some(
+													(selected) =>
+														selected.id === res.id,
+												)}
+												onCheckedChange={() => {
+													const isCurrentlySelected =
+														selectedResources.some(
+															(selected) =>
+																selected.id ===
+																res.id,
+														);
+
+													const newResources =
+														isCurrentlySelected
+															? selectedResources.filter(
+																	(
+																		selected,
+																	) =>
+																		selected.id !==
+																		res.id,
+																)
+															: [
+																	...selectedResources,
+																	res,
+																];
+
+													onSelectedResourcesChange(
+														newResources,
+													);
+												}}
+												className="cursor-pointer"
+											/>
+										</div>
+									</div>
+								))}
+							</>
+						) : (
+							<div className="flex flex-col gap-3 mt-24 items-center justify-center p-4">
+								<div className="text-muted-foreground">
+									No resources match the current filter
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setActiveFilter(null)}
+									className="mt-2"
+								>
+									Clear filter
+								</Button>
+							</div>
+						)
 					) : (
 						<div className="flex flex-col gap-3 mt-48 items-center justify-center p-2">
 							<ScrollText

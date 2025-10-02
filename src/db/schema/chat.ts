@@ -8,6 +8,7 @@ import {
 	timestamp,
 	vector,
 } from "drizzle-orm/pg-core";
+import type { ResourceMetadata } from "@/types/data-types";
 import { user } from "./user";
 
 export const chat = pgTable(
@@ -60,7 +61,7 @@ export const resource = pgTable(
 			.notNull()
 			.references(() => user.id),
 		createdAt: timestamp("createdAt").notNull(),
-		metadata: json("metadata"),
+		metadata: json("metadata").$type<ResourceMetadata>(),
 	},
 	(table) => [
 		index("resource_chat_id_idx").on(table.chatId),
