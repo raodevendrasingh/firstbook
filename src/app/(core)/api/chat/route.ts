@@ -150,6 +150,7 @@ export async function GET(req: Request) {
 		}
 
 		const notebookTitle = notebook[0].title;
+		const notebookSummary = notebook[0].summary || "";
 
 		const messages = await db
 			.select()
@@ -162,8 +163,16 @@ export async function GET(req: Request) {
 			{
 				success: true,
 				message: "Chat fetched",
-				data: { messages: uiMessages, title: notebookTitle },
-			} satisfies ApiResponse<{ messages: UIMessage[]; title: string }>,
+				data: {
+					messages: uiMessages,
+					title: notebookTitle,
+					summary: notebookSummary,
+				},
+			} satisfies ApiResponse<{
+				messages: UIMessage[];
+				title: string;
+				summary: string;
+			}>,
 			{ status: 200 },
 		);
 	} catch (error) {

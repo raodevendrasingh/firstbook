@@ -320,7 +320,7 @@ export const SourcePanel = ({
 										key={res.id}
 										className="flex flex-col gap-2"
 									>
-										<div className="group py-1 px-3 h-10 rounded-lg bg-accent/80 flex items-center gap-3 hover:bg-accent transition-colors relative">
+										<div className="group py-1 px-3 h-10 rounded-lg bg-accent/50 flex items-center gap-3 hover:bg-accent transition-colors relative">
 											<div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
 												<span
 													className={cn(

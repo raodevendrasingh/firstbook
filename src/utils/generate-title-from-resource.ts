@@ -21,11 +21,11 @@ export async function generateTitleFromResource({
 		const { text: title } = await generateText({
 			model: google("gemini-2.0-flash-lite"),
 			system: `\n
-				- you will generate a short title based on the first message a user begins a conversation with
+				- you will generate a short title based on the content provided
 				- ensure it is not more than 60 characters long
-				- the title should be a summary of the user's message
+				- the title should capture the main topic or theme of the content
 				- do not use quotes or colons`,
-			prompt: JSON.stringify(resource),
+			prompt: resource.content,
 		});
 
 		return title;

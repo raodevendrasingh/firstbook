@@ -23,6 +23,7 @@ export type FetchNotebooksResponse = ApiResponse<{
 export type FetchChatResponse = ApiResponse<{
 	messages: UIMessage[];
 	title: string;
+	summary: string;
 }>;
 
 export type SourceFetchResponse = ApiResponse<{ resource: Resource[] }>;

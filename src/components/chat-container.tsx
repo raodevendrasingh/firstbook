@@ -1,13 +1,12 @@
 "use client";
 
 import type { ChatStatus, UIMessage } from "ai";
-import { CopyIcon, GlobeIcon, Link, RefreshCcwIcon } from "lucide-react";
-import { Fragment } from "react";
+import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 import { Action, Actions } from "@/components/ai-elements/actions";
 import {
 	Conversation,
 	ConversationContent,
-	ConversationEmptyState,
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Loader } from "@/components/ai-elements/loader";
@@ -34,11 +33,15 @@ import {
 import { ModelCombobox } from "@/components/model-combobox";
 import { cn } from "@/lib/utils";
 import { Response } from "./ai-elements/response";
+import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
+import { Skeleton } from "./ui/skeleton";
 
 export type ChatContainerProps = {
 	className?: string;
 	title?: string;
 	messages: UIMessage[];
+	summary?: string;
 	status: string;
 	regenerate: () => void;
 	input: string;
@@ -49,13 +52,16 @@ export type ChatContainerProps = {
 	model: string;
 	setModel: (value: string) => void;
 	models: string[];
+	isLoading?: boolean;
 	hasSources?: boolean;
+	sourceCount?: number;
 };
 
 export function ChatContainer({
 	className,
-	title = "Add a source to get started",
+	title,
 	messages,
+	summary,
 	status,
 	regenerate,
 	input,
@@ -66,8 +72,19 @@ export function ChatContainer({
 	model,
 	setModel,
 	models,
+	isLoading,
 	hasSources = true,
+	sourceCount = 0,
 }: ChatContainerProps) {
+	const [justCopied, setJustCopied] = useState(false);
+
+	useEffect(() => {
+		if (justCopied) {
+			const timer = setTimeout(() => setJustCopied(false), 2000);
+			return () => clearTimeout(timer);
+		}
+	}, [justCopied]);
+
 	return (
 		<div
 			className={cn(
@@ -78,123 +95,176 @@ export function ChatContainer({
 			<div className="flex flex-col h-[calc(100vh-7.3rem)] md:h-[calc(100vh-4.7rem)] p-3">
 				<Conversation className="h-full">
 					<ConversationContent>
-						{messages.length === 0 ? (
-							<ConversationEmptyState
-								className="mt-28"
-								icon={<Link className="size-6" />}
-								title="Add a source to get started"
-							/>
-						) : (
-							messages.map((message) => (
-								<div key={message.id}>
-									{message.role === "assistant" &&
-										message.parts.filter(
-											(part) =>
-												part.type === "source-url",
-										).length > 0 && (
-											<Sources>
-												<SourcesTrigger
-													count={
-														message.parts.filter(
-															(part) =>
-																part.type ===
-																"source-url",
-														).length
-													}
-												/>
-												{message.parts
-													.filter(
+						<div className="flex flex-col gap-2 max-w-4xl mx-auto pt-5">
+							{isLoading ? (
+								<div className="flex flex-col gap-3">
+									<Skeleton className="h-9 w-3/4 rounded-lg" />
+									<Skeleton className="h-5 w-28 rounded-full" />
+									<div className="flex flex-col gap-2">
+										{[1, 2, 3, 4, 5, 6, 7].map((num) => (
+											<Skeleton
+												key={`summary-skeleton-${num}`}
+												className="h-7 w-full rounded-lg"
+											/>
+										))}
+									</div>
+									<Separator />
+								</div>
+							) : (
+								<>
+									{title && (
+										<h1 className="text-3xl font-semibold">
+											{title}
+										</h1>
+									)}
+									{sourceCount > 0 && (
+										<span className="text-sm text-muted-foreground">
+											{sourceCount}{" "}
+											{sourceCount === 1
+												? "source"
+												: "sources"}
+										</span>
+									)}
+									{summary && (
+										<div className="flex flex-col gap-3">
+											<p className="text-sm leading-6 text-muted-foreground text-balance">
+												{summary}
+											</p>
+											<div className="flex justify-end">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => {
+														navigator.clipboard.writeText(
+															summary,
+														);
+														setJustCopied(true);
+													}}
+													className="h-7 px-2 text-xs"
+												>
+													{justCopied ? (
+														<CheckIcon className="size-3" />
+													) : (
+														<CopyIcon className="size-3" />
+													)}
+													{justCopied
+														? "Copied!"
+														: "Copy summary"}
+												</Button>
+											</div>
+										</div>
+									)}
+									{(title || summary) && <Separator />}
+								</>
+							)}
+						</div>
+						{messages.map((message) => (
+							<div key={message.id} className="max-w-4xl mx-auto">
+								{message.role === "assistant" &&
+									message.parts.filter(
+										(part) => part.type === "source-url",
+									).length > 0 && (
+										<Sources>
+											<SourcesTrigger
+												count={
+													message.parts.filter(
 														(part) =>
 															part.type ===
 															"source-url",
-													)
-													.map((part, i) => (
-														<SourcesContent
+													).length
+												}
+											/>
+											{message.parts
+												.filter(
+													(part) =>
+														part.type ===
+														"source-url",
+												)
+												.map((part, i) => (
+													<SourcesContent
+														key={`${message.id}-${i}`}
+													>
+														<Source
 															key={`${message.id}-${i}`}
-														>
-															<Source
-																key={`${message.id}-${i}`}
-																href={part.url}
-																title={part.url}
-															/>
-														</SourcesContent>
-													))}
-											</Sources>
-										)}
-									{message.parts.map((part, i) => {
-										switch (part.type) {
-											case "text":
-												return (
-													<Fragment
-														key={`${message.id}-${i}`}
+															href={part.url}
+															title={part.url}
+														/>
+													</SourcesContent>
+												))}
+										</Sources>
+									)}
+								{message.parts.map((part, i) => {
+									switch (part.type) {
+										case "text":
+											return (
+												<Fragment
+													key={`${message.id}-${i}`}
+												>
+													<Message
+														from={message.role}
 													>
-														<Message
-															from={message.role}
-														>
-															<MessageContent variant="flat">
-																<Response className="md:text-base">
-																	{part.text}
-																</Response>
-															</MessageContent>
-														</Message>
-														{message.role ===
-															"assistant" &&
-															i ===
-																messages.length -
-																	1 && (
-																<Actions className="mt-2">
-																	<Action
-																		onClick={() =>
-																			regenerate()
-																		}
-																		label="Retry"
-																	>
-																		<RefreshCcwIcon className="size-3" />
-																	</Action>
-																	<Action
-																		onClick={() =>
-																			navigator.clipboard.writeText(
-																				part.text,
-																			)
-																		}
-																		label="Copy"
-																	>
-																		<CopyIcon className="size-3" />
-																	</Action>
-																</Actions>
-															)}
-													</Fragment>
-												);
-											case "reasoning":
-												return (
-													<Reasoning
-														key={`${message.id}-${i}`}
-														className="w-full"
-														isStreaming={
-															status ===
-																"streaming" &&
-															i ===
-																message.parts
-																	.length -
-																	1 &&
-															message.id ===
-																messages.at(-1)
-																	?.id
-														}
-													>
-														<ReasoningTrigger />
-														<ReasoningContent>
-															{part.text}
-														</ReasoningContent>
-													</Reasoning>
-												);
-											default:
-												return null;
-										}
-									})}
-								</div>
-							))
-						)}
+														<MessageContent variant="flat">
+															<Response className="md:text-base">
+																{part.text}
+															</Response>
+														</MessageContent>
+													</Message>
+													{message.role ===
+														"assistant" &&
+														i ===
+															messages.length -
+																1 && (
+															<Actions className="mt-2">
+																<Action
+																	onClick={() =>
+																		regenerate()
+																	}
+																	label="Retry"
+																>
+																	<RefreshCcwIcon className="size-3" />
+																</Action>
+																<Action
+																	onClick={() =>
+																		navigator.clipboard.writeText(
+																			part.text,
+																		)
+																	}
+																	label="Copy"
+																>
+																	<CopyIcon className="size-3" />
+																</Action>
+															</Actions>
+														)}
+												</Fragment>
+											);
+										case "reasoning":
+											return (
+												<Reasoning
+													key={`${message.id}-${i}`}
+													className="w-full"
+													isStreaming={
+														status ===
+															"streaming" &&
+														i ===
+															message.parts
+																.length -
+																1 &&
+														message.id ===
+															messages.at(-1)?.id
+													}
+												>
+													<ReasoningTrigger />
+													<ReasoningContent>
+														{part.text}
+													</ReasoningContent>
+												</Reasoning>
+											);
+										default:
+											return null;
+									}
+								})}
+							</div>
+						))}
 						{status === "submitted" && <Loader />}
 					</ConversationContent>
 					<ConversationScrollButton />

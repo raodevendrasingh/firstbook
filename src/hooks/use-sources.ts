@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Resource } from "@/db/schema";
 import type { ApiResponse } from "@/types/api-handler";
+import { chatKeys } from "./use-chat";
 
 export const sourcesKeys = {
 	all: ["sources"] as const,
@@ -60,8 +61,13 @@ export function useAddSources() {
 			return response.json();
 		},
 		onSuccess: (_, variables) => {
+			// Invalidate both sources and chat queries since adding sources
+			// also updates the chat with a unified summary
 			queryClient.invalidateQueries({
 				queryKey: sourcesKeys.sources(variables.chatId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.chat(variables.chatId),
 			});
 		},
 	});
@@ -127,8 +133,13 @@ export function useDeleteSource() {
 			}
 		},
 		onSuccess: (_, variables) => {
+			// Invalidate both sources and chat queries since deleting sources
+			// may also update the chat's unified summary
 			queryClient.invalidateQueries({
 				queryKey: sourcesKeys.sources(variables.chatId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: chatKeys.chat(variables.chatId),
 			});
 		},
 	});

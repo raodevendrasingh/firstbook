@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, type Resource, resource } from "@/db/schema";
@@ -7,6 +7,8 @@ import { auth } from "@/lib/auth";
 import { getR2CredentialsForUser } from "@/lib/r2-service";
 import type { ApiResponse } from "@/types/api-handler";
 import type { FileData } from "@/types/data-types";
+import { generateTitleFromResource } from "@/utils/generate-title-from-resource";
+import { generateUnifiedSummary } from "@/utils/generate-unified-summary";
 import { handleFilesUpload } from "./handlers/files-handler";
 import { handleLinksProcessing } from "./handlers/links-handler";
 import { handleTextProcessing } from "./handlers/text-handler";
@@ -237,6 +239,86 @@ export async function POST(request: Request) {
 					} satisfies ApiResponse,
 					{ status: 400 },
 				);
+		}
+
+		try {
+			const allResources = await db
+				.select({
+					summary: resource.summary,
+					title: resource.title,
+					type: resource.type,
+					content: sql<string>`LEFT(${resource.content}, 1000)`,
+				})
+				.from(resource)
+				.where(
+					and(
+						eq(resource.chatId, chatId),
+						eq(resource.userId, session.user.id),
+					),
+				);
+
+			const resourceSummaries = allResources
+				.map((r) => r.summary)
+				.filter(
+					(summary): summary is string =>
+						summary !== null && summary.trim().length > 0,
+				);
+
+			if (chatTitle === "Untitled Notebook" || chatTitle === "") {
+				try {
+					const resourceWithContent = allResources.find(
+						(r) => r.content && r.content.trim().length > 0,
+					);
+
+					if (resourceWithContent?.content) {
+						const generatedTitle = await generateTitleFromResource({
+							resource: {
+								content: resourceWithContent.content,
+							},
+							googleKey: googleKey ?? undefined,
+						});
+
+						if (
+							generatedTitle &&
+							generatedTitle.trim().length > 0
+						) {
+							await db
+								.update(chat)
+								.set({ title: generatedTitle })
+								.where(
+									and(
+										eq(chat.id, chatId),
+										eq(chat.userId, session.user.id),
+									),
+								);
+						}
+					}
+				} catch {
+					// Silently fail if title generation fails
+				}
+			}
+
+			if (resourceSummaries.length > 0) {
+				const unifiedSummary = await generateUnifiedSummary({
+					resourceSummaries,
+					chatTitle,
+					googleKey: googleKey ?? undefined,
+				});
+
+				if (unifiedSummary.trim().length > 0) {
+					await db
+						.update(chat)
+						.set({ summary: unifiedSummary })
+						.where(
+							and(
+								eq(chat.id, chatId),
+								eq(chat.userId, session.user.id),
+							),
+						);
+				}
+			}
+		} catch {
+			// Silently handle error
 		}
 
 		return Response.json(

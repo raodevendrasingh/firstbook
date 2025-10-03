@@ -17,6 +17,7 @@ export const chat = pgTable(
 		id: text("id").primaryKey().notNull(),
 		createdAt: timestamp("createdAt").notNull(),
 		title: text("title").notNull(),
+		summary: text("summary"),
 		userId: text("userId")
 			.notNull()
 			.references(() => user.id),

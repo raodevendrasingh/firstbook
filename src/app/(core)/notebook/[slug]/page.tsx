@@ -48,7 +48,7 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 		},
 	});
 
-	const { data: chatData } = useFetchChat(slug);
+	const { data: chatData, isLoading: isChatLoading } = useFetchChat(slug);
 
 	const { selectedModel, selectModel, allModels } = useModelSelection();
 
@@ -129,8 +129,17 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					<TabsContent value="chat" className="p-2">
 						<ChatContainer
 							className="block md:hidden h-[calc(100vh-7.3rem)] "
-							title="Chat"
+							title={
+								chatData?.success
+									? chatData.data?.title
+									: "Untitled Notebook"
+							}
 							messages={messages}
+							summary={
+								chatData?.success
+									? chatData.data?.summary
+									: undefined
+							}
 							status={status}
 							regenerate={regenerate}
 							input={input}
@@ -142,6 +151,8 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 							setModel={selectModel}
 							models={allModels}
 							hasSources={selectedResources.length > 0}
+							sourceCount={selectedResources.length}
+							isLoading={isChatLoading}
 						/>
 					</TabsContent>
 					<TabsContent value="sources" className="p-2">
@@ -163,10 +174,25 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 
 			{/* Desktop Layout */}
 			<div className="w-full mx-auto items-center justify-center md:flex hidden flex-row gap-2 p-2 pt-16 relative bg-accent/30">
+				<SourcePanel
+					className="hidden md:flex"
+					setSourceDialogOpen={setSourceDialogOpen}
+					chatId={slug}
+					onNoSourcesDetected={() => setSourceDialogOpen(true)}
+					selectedResources={selectedResources}
+					onSelectedResourcesChange={handleSelectedResourcesChange}
+				/>
 				<ChatContainer
 					className="hidden md:flex flex-col h-[calc(100vh-4.5rem)]"
-					title="Chat"
+					title={
+						chatData?.success
+							? chatData.data?.title
+							: "Untitled Notebook"
+					}
 					messages={messages}
+					summary={
+						chatData?.success ? chatData.data?.summary : undefined
+					}
 					status={status}
 					regenerate={regenerate}
 					input={input}
@@ -178,14 +204,8 @@ export default function NotebookPage({ params }: NotebookPageProps) {
 					setModel={selectModel}
 					models={allModels}
 					hasSources={selectedResources.length > 0}
-				/>
-				<SourcePanel
-					className="hidden md:flex"
-					setSourceDialogOpen={setSourceDialogOpen}
-					chatId={slug}
-					onNoSourcesDetected={() => setSourceDialogOpen(true)}
-					selectedResources={selectedResources}
-					onSelectedResourcesChange={handleSelectedResourcesChange}
+					sourceCount={selectedResources.length}
+					isLoading={isChatLoading}
 				/>
 			</div>
 
