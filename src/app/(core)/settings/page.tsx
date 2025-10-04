@@ -1,22 +1,13 @@
 "use client";
 
-import { Info, Key, LogOut, Upload } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ApiKeyManager } from "@/components/api-key-manager";
-import { CredentialManager } from "@/components/credential-manager";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { useFetchR2Credentials } from "@/hooks/use-r2-credentials";
 import { authClient } from "@/lib/auth-client";
 import type { UserSession } from "@/types/data-types";
 import { loadAvatar } from "@/utils/avatar-utils";
@@ -25,23 +16,8 @@ export default function SettingsPage() {
 	const [session, setSession] = useState<UserSession | null>(null);
 	const [sessionLoading, setSessionLoading] = useState<boolean>(true);
 	const [sessionError, setSessionError] = useState<boolean>(false);
-	const [fileUploadsEnabled, setFileUploadsEnabled] =
-		useState<boolean>(false);
 
-	useEffect(() => {
-		try {
-			const savedState = localStorage.getItem("fileUploadsEnabled");
-			if (savedState !== null) {
-				setFileUploadsEnabled(JSON.parse(savedState));
-			}
-		} catch (_error) {
-			// If parsing fails, keep the default value (false)
-		}
-	}, []);
 	const router = useRouter();
-
-	const { data: r2Credentials } = useFetchR2Credentials();
-	const hasR2Credentials = !!r2Credentials;
 
 	useEffect(() => {
 		const fetchSession = async () => {
@@ -120,7 +96,7 @@ export default function SettingsPage() {
 				<div>
 					<h1 className="text-3xl font-semibold">Settings</h1>
 					<p className="text-muted-foreground mt-2">
-						Manage your account settings and API keys
+						Manage your account settings
 					</p>
 				</div>
 
@@ -164,91 +140,6 @@ export default function SettingsPage() {
 									</Button>
 								</div>
 							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				<Card className="rounded-xl">
-					<CardHeader>
-						<CardTitle className="text-xl font-semibold flex items-center justify-between">
-							<div className="flex items-center">
-								<Key className="h-5 w-5 mr-2" />
-								API Keys
-							</div>
-							<Popover>
-								<PopoverTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										className="h-6 w-6 p-0 hover:bg-muted rounded-full"
-									>
-										<Info className="h-4 w-4 text-muted-foreground" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-80 p-0 rounded-2xl bg-background border-0"
-									align="end"
-								>
-									<div className="space-y-3 p-4 bg-accent/10 rounded-2xl">
-										<h4 className="font-semibold text-sm">
-											API Key Information
-										</h4>
-										<ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-											<li>
-												Keys are encrypted and stored
-												securely in the database
-											</li>
-											<li>
-												Add Exa API key and at least one
-												LLM API key to make the app work
-											</li>
-										</ul>
-									</div>
-								</PopoverContent>
-							</Popover>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{sessionLoading ? (
-							<SettingsSkeleton />
-						) : (
-							<ApiKeyManager />
-						)}
-					</CardContent>
-				</Card>
-
-				<Card className="rounded-xl">
-					<CardHeader>
-						<CardTitle className="text-xl font-semibold flex items-center justify-between">
-							<div className="flex items-center">
-								<Upload className="h-5 w-5 mr-2" />
-								File uploads
-							</div>
-							<div className="flex items-center gap-2">
-								<Switch
-									checked={fileUploadsEnabled}
-									onCheckedChange={(checked) => {
-										setFileUploadsEnabled(checked);
-										localStorage.setItem(
-											"fileUploadsEnabled",
-											JSON.stringify(checked),
-										);
-									}}
-									disabled={!hasR2Credentials}
-								/>
-								<span className="text-sm text-muted-foreground">
-									{fileUploadsEnabled
-										? "Enabled"
-										: "Disabled"}
-								</span>
-							</div>
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{sessionLoading ? (
-							<SettingsSkeleton />
-						) : (
-							<CredentialManager />
 						)}
 					</CardContent>
 				</Card>

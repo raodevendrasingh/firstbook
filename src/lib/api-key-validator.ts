@@ -1,9 +1,9 @@
 import { MODELS } from "@/utils/resolve-models";
 import type { Keys } from "../types/data-types";
-import { getApiKey, hasApiKey } from "./api-keys";
+import { env } from "./env";
 
 export async function getRequiredApiKeys(
-	userId: string,
+	_userId: string,
 	selectedModel: string,
 	webSearchEnabled: boolean,
 ): Promise<Keys> {
@@ -20,39 +20,35 @@ export async function getRequiredApiKeys(
 	);
 
 	if (isOpenAI) {
-		const hasOpenAIKey = await hasApiKey(userId, "openai");
-		if (!hasOpenAIKey) {
+		if (!env.OPENAI_API_KEY) {
 			throw new Error(
-				"OpenAI API key is required for this model. Please add your OpenAI API key in settings.",
+				"OpenAI API key is required for this model. Please configure OPENAI_API_KEY in your environment variables.",
 			);
 		}
-		keys.openaiKey = (await getApiKey(userId, "openai")) || undefined;
+		keys.openaiKey = env.OPENAI_API_KEY;
 	} else if (isAnthropic) {
-		const hasAnthropicKey = await hasApiKey(userId, "anthropic");
-		if (!hasAnthropicKey) {
+		if (!env.ANTHROPIC_API_KEY) {
 			throw new Error(
-				"Anthropic API key is required for this model. Please add your Anthropic API key in settings.",
+				"Anthropic API key is required for this model. Please configure ANTHROPIC_API_KEY in your environment variables.",
 			);
 		}
-		keys.anthropicKey = (await getApiKey(userId, "anthropic")) || undefined;
+		keys.anthropicKey = env.ANTHROPIC_API_KEY;
 	} else if (isGoogle) {
-		const hasGoogleKey = await hasApiKey(userId, "gemini");
-		if (!hasGoogleKey) {
+		if (!env.GOOGLE_GENERATIVE_AI_API_KEY) {
 			throw new Error(
-				"Google API key is required for this model. Please add your Google API key in settings.",
+				"Google API key is required for this model. Please configure GOOGLE_GENERATIVE_AI_API_KEY in your environment variables.",
 			);
 		}
-		keys.googleKey = (await getApiKey(userId, "gemini")) || undefined;
+		keys.googleKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
 	}
 
 	if (webSearchEnabled) {
-		const hasExaKey = await hasApiKey(userId, "exa");
-		if (!hasExaKey) {
+		if (!env.EXASEARCH_API_KEY) {
 			throw new Error(
-				"Exa API key is required for web search. Please add your Exa API key in settings.",
+				"Exa API key is required for web search. Please configure EXASEARCH_API_KEY in your environment variables.",
 			);
 		}
-		keys.exaKey = (await getApiKey(userId, "exa")) || undefined;
+		keys.exaKey = env.EXASEARCH_API_KEY;
 	}
 
 	return keys;

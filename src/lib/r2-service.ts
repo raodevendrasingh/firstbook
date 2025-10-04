@@ -1,6 +1,13 @@
 import { S3Client } from "@aws-sdk/client-s3";
-import { getR2Credentials, type R2Credentials } from "./api-keys";
 import { env } from "./env";
+
+export interface R2Credentials {
+	endpoint: string;
+	accessKeyId: string;
+	secretAccessKey: string;
+	publicAccessUrl: string;
+	bucket: string;
+}
 
 export function createR2Client(credentials: R2Credentials): S3Client {
 	return new S3Client({
@@ -111,21 +118,14 @@ export function getR2CredentialsFromEnv(): R2Credentials | null {
 }
 
 export async function getR2CredentialsForUser(
-	userId: string,
+	_userId: string,
 ): Promise<R2Credentials> {
-	// First try to get user-specific credentials
-	const userCredentials = await getR2Credentials(userId);
-	if (userCredentials) {
-		return userCredentials;
-	}
-
-	// Fall back to environment variables
 	const envCredentials = getR2CredentialsFromEnv();
 	if (envCredentials) {
 		return envCredentials;
 	}
 
 	throw new Error(
-		"R2 credentials not configured. Please configure your R2 credentials in settings or environment variables.",
+		"R2 credentials not configured. Please configure your R2 credentials in environment variables.",
 	);
 }

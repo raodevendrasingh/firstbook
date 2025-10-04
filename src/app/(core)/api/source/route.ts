@@ -2,8 +2,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db/drizzle";
 import { chat, type Resource, resource } from "@/db/schema";
-import { getApiKey } from "@/lib/api-keys";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { getR2CredentialsForUser } from "@/lib/r2-service";
 import type { ApiResponse } from "@/types/api-handler";
 import type { FileData } from "@/types/data-types";
@@ -71,16 +71,14 @@ export async function POST(request: Request) {
 		const chatTitle = chatResult.title;
 		const titleUpdated = false;
 
-		const [exaKey, googleKey] = await Promise.all([
-			getApiKey(session.user.id, "exa"),
-			getApiKey(session.user.id, "gemini"),
-		]);
+		const exaKey = env.EXASEARCH_API_KEY;
+		const googleKey = env.GOOGLE_GENERATIVE_AI_API_KEY;
 
 		if (!googleKey) {
 			return Response.json(
 				{
 					success: false,
-					error: "Google API key is required for embeddings. Please configure it in settings.",
+					error: "Google API key is required for embeddings. Please configure it in your environment variables.",
 					requiresSetup: true,
 				} satisfies ApiResponse,
 				{ status: 400 },
@@ -91,7 +89,7 @@ export async function POST(request: Request) {
 			return Response.json(
 				{
 					success: false,
-					error: "Exa API key is required for URL processing. Please configure it in settings.",
+					error: "Exa API key is required for URL processing. Please configure it in your environment variables.",
 					requiresSetup: true,
 				} satisfies ApiResponse,
 				{ status: 400 },
@@ -105,7 +103,7 @@ export async function POST(request: Request) {
 				return Response.json(
 					{
 						success: false,
-						error: "R2 credentials are not configured. Please configure your file upload credentials in settings or environment variables.",
+						error: "R2 credentials are not configured. Please configure your file upload credentials in environment variables.",
 						requiresSetup: true,
 					} satisfies ApiResponse,
 					{ status: 400 },
@@ -117,7 +115,7 @@ export async function POST(request: Request) {
 			return Response.json(
 				{
 					success: false,
-					error: "Google API key is required for text processing. Please configure it in settings.",
+					error: "Google API key is required for text processing. Please configure it in your environment variables.",
 					requiresSetup: true,
 				} satisfies ApiResponse,
 				{ status: 400 },
@@ -146,8 +144,8 @@ export async function POST(request: Request) {
 					chatId,
 					chatTitle,
 					titleUpdated,
-					exaKey,
-					googleKey,
+					exaKey || null,
+					googleKey || null,
 				);
 				break;
 			}
@@ -171,8 +169,8 @@ export async function POST(request: Request) {
 					session,
 					{ files: data.files || [] },
 					chatId,
-					exaKey,
-					googleKey,
+					exaKey || null,
+					googleKey || null,
 				);
 
 				if (
@@ -225,8 +223,8 @@ export async function POST(request: Request) {
 					session,
 					{ text: data.text || "" },
 					chatId,
-					exaKey,
-					googleKey,
+					exaKey || null,
+					googleKey || null,
 				);
 				break;
 			}

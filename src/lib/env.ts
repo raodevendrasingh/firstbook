@@ -1,4 +1,7 @@
+import { config } from "dotenv";
 import { z } from "zod";
+
+config({ path: ".env.local", quiet: true, override: true });
 
 const envSchema = z.object({
 	DATABASE_URL: z.string().min(1),
@@ -18,8 +21,6 @@ const envSchema = z.object({
 	ANTHROPIC_API_KEY: z.string().optional(),
 	GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
 	EXASEARCH_API_KEY: z.string().optional(),
-
-	API_KEY_ENCRYPTION_SECRET: z.string().min(1),
 
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
