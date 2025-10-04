@@ -6,7 +6,7 @@ config({ path: ".env.local", quiet: true, override: true });
 const envSchema = z.object({
 	DATABASE_URL: z.string().min(1),
 
-	NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
+	NEXT_PUBLIC_APP_URL: z.url().min(1),
 
 	GOOGLE_CLIENT_ID: z.string().min(1),
 	GOOGLE_CLIENT_SECRET: z.string().min(1),
@@ -22,16 +22,17 @@ const envSchema = z.object({
 	GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
 	EXASEARCH_API_KEY: z.string().optional(),
 
-	NODE_ENV: z
-		.enum(["development", "production", "test"])
-		.default("development"),
+	NODE_ENV: z.enum(["development", "production"]),
 });
 
 function createEnv() {
 	if (typeof window !== "undefined") {
 		return {
-			NEXT_PUBLIC_APP_URL: "http://localhost:3000",
-			NODE_ENV: "development" as const,
+			NEXT_PUBLIC_APP_URL:
+				process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+			NODE_ENV:
+				(process.env.NODE_ENV as "development" | "production") ||
+				"development",
 		} as z.infer<typeof envSchema>;
 	}
 
