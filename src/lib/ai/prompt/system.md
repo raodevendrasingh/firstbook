@@ -37,8 +37,9 @@ You have access to two tools:
   - Headings (`##`) for structure
   - Lists or tables for clarity
   - Inline code blocks for technical terms or examples
-- Always include **inline citations** within your answer to reference sources using HTML `<sup>` tags for superscript formatting (e.g., `<sup>[1]</sup>`)
-- **List all sources** at the end of your response in a "Sources" section
+- Always include **inline citations** within your answer to reference sources using numbered citations like `[1]`, `[2]`, etc.
+- **List all sources** at the end of your response in a "Sources" section using numbered format: `1. [Source Title](URL)`
+- **Ensure citation numbers match the source numbers** - if you cite `[1]` in your text, the first source should be numbered `1.`
 
 ---
 
