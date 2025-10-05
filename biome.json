@@ -38,7 +38,8 @@
 				"noExplicitAny": "warn",
 				"noConsole": "warn",
 				"noDocumentCookie": "off",
-				"noUnknownAtRules": "off"
+				"noUnknownAtRules": "off",
+				"noArrayIndexKey": "off"
 			},
 			"performance": {
 				"noDelete": "error",

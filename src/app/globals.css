@@ -169,4 +169,11 @@ body {
 	body {
 		@apply bg-background text-foreground;
 	}
+	sup {
+		font-size: 0.75em;
+		vertical-align: super;
+		line-height: 0;
+		position: relative;
+		top: -0.5em;
+	}
 }

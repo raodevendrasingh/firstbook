@@ -84,6 +84,8 @@ export const SourcePanel = ({
 
 	const [hasInitializedSelection, setHasInitializedSelection] =
 		useState(false);
+	const [hasRecentlyAddedSources, setHasRecentlyAddedSources] =
+		useState(false);
 	const previousResourceIds = useRef<Set<string>>(new Set());
 
 	useEffect(() => {
@@ -108,6 +110,7 @@ export const SourcePanel = ({
 				newResourceIds.has(r.id),
 			);
 			onSelectedResourcesChange([...selectedResources, ...newResources]);
+			setHasRecentlyAddedSources(true);
 		}
 
 		previousResourceIds.current = currentResourceIds;
@@ -120,18 +123,39 @@ export const SourcePanel = ({
 	]);
 
 	useEffect(() => {
-		if (!onNoSourcesDetected || isLoading) {
+		if (!onNoSourcesDetected || isLoading || hasRecentlyAddedSources) {
 			return;
 		}
 
 		if (resources.length === 0) {
 			const timeoutId = window.setTimeout(() => {
-				onNoSourcesDetected();
+				if (
+					resources.length === 0 &&
+					!isLoading &&
+					!hasRecentlyAddedSources
+				) {
+					onNoSourcesDetected();
+				}
 			}, 1000);
 
 			return () => window.clearTimeout(timeoutId);
 		}
-	}, [isLoading, onNoSourcesDetected, resources.length]);
+	}, [
+		isLoading,
+		onNoSourcesDetected,
+		resources.length,
+		hasRecentlyAddedSources,
+	]);
+
+	useEffect(() => {
+		if (hasRecentlyAddedSources) {
+			const timeoutId = window.setTimeout(() => {
+				setHasRecentlyAddedSources(false);
+			}, 2000);
+
+			return () => window.clearTimeout(timeoutId);
+		}
+	}, [hasRecentlyAddedSources]);
 
 	const handleDelete = (id: string) => {
 		if (!chatId) return;

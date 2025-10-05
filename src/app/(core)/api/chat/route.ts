@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 		const result = streamText({
 			model,
 			system: systemPrompt,
-			stopWhen: stepCountIs(3),
+			stopWhen: stepCountIs(5),
 			tools: {
 				searchResource: searchResource(payload.selectedResources, {
 					openaiKey: apiKeys.openaiKey,

@@ -2,6 +2,8 @@ import { AsteriskIcon, SparkleIcon } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { GithubIcon } from "@/assets/icons/github";
+import notebook_dark from "@/assets/screens/notebook_dark.png";
+import notebook_light from "@/assets/screens/notebook_light.png";
 import { AnimatedGroup } from "@/components/ui/animated-group";
 import { Button } from "@/components/ui/button";
 import { TextEffect } from "@/components/ui/text-effect";
@@ -133,18 +135,18 @@ export default function HeroSection() {
 							...transitionVariants,
 						}}
 					>
-						<div className="mask-b-from-55% relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-							<div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-7xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+						<div className="mask-b-from-55% relative -mr-56 mt-4 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+							<div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-7xl overflow-hidden rounded-2xl border p-1 shadow-lg shadow-zinc-950/15 ring-1">
 								<Image
 									className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-									src="/mail2.png"
+									src={notebook_dark}
 									alt="app screen"
 									width="2700"
 									height="1440"
 								/>
 								<Image
 									className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-									src="/mail2-light.png"
+									src={notebook_light}
 									alt="app screen"
 									width="2700"
 									height="1440"

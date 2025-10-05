@@ -9,7 +9,6 @@ import {
 	ConversationContent,
 	ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Loader } from "@/components/ai-elements/loader";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
 	PromptInput,
@@ -33,6 +32,7 @@ import {
 import { ModelCombobox } from "@/components/model-combobox";
 import { cn } from "@/lib/utils";
 import { Response } from "./ai-elements/response";
+import { DotsLoader } from "./loader";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
@@ -265,7 +265,28 @@ export function ChatContainer({
 								})}
 							</div>
 						))}
-						{status === "submitted" && <Loader />}
+						{(() => {
+							const lastMessage = messages.at(-1);
+							const hasTextContent =
+								lastMessage?.role === "assistant" &&
+								lastMessage.parts?.some(
+									(part) =>
+										part.type === "text" &&
+										part.text?.trim().length > 0,
+								);
+
+							const showLoader =
+								status === "submitted" ||
+								(status === "streaming" && !hasTextContent);
+
+							return (
+								showLoader && (
+									<div className="max-w-4xl mx-auto">
+										<DotsLoader />
+									</div>
+								)
+							);
+						})()}
 					</ConversationContent>
 					<ConversationScrollButton />
 				</Conversation>
