@@ -34,6 +34,14 @@ export const metadata: Metadata = {
 		description:
 			"An open, lightweight take on NotebookLM — focused on clarity, sources, and real-time context.",
 	},
+	icons: {
+		icon: [
+			{ url: "/favicon-16x16.png", sizes: "16x16" },
+			{ url: "/favicon-32x32.png", sizes: "32x32" },
+		],
+		apple: "/apple-touch-icon.png",
+	},
+	manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -43,26 +51,6 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<head>
-				<link
-					rel="apple-touch-icon"
-					sizes="180x180"
-					href="/apple-touch-icon.png"
-				/>
-				<link
-					rel="icon"
-					type="image/png"
-					sizes="32x32"
-					href="/favicon-32x32.png"
-				/>
-				<link
-					rel="icon"
-					type="image/png"
-					sizes="16x16"
-					href="/favicon-16x16.png"
-				/>
-				<link rel="manifest" href="/site.webmanifest" />
-			</head>
 			<body className={`${figtree.variable} font-sans antialiased`}>
 				<QueryProvider>
 					<ThemeProvider
